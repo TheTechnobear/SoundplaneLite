@@ -35,16 +35,11 @@ set(SPL_H
 
         soundplane/Source/TouchTracker.h
 
-        # madronalib/source/networking/MLOSCListener.h
-        # madronalib/source/JuceApp/MLAppState.h
-        # soundplane/Source/Zone.h
-        # SoundplaneModel.h
-        # SoundplaneMECOutput.h
+#        madronalib/source/deprecated/MLDSPDeprecated.cpp
+#        madronalib/source/deprecated/MLVectorDeprecated.h
+#        Zone.h
+        SpliteModel.h
 
-        #deprecated
-        # madronalib/source/deprecated/MLParameter.h
-        # madronalib/source/deprecated/MLDebug.h
-        # madronalib/source/deprecated/MLTextStreamListener.h
         )
 
 set(SPL_SRC
@@ -67,15 +62,10 @@ set(SPL_SRC
 
         soundplane/Source/TouchTracker.cpp
 
-        # madronalib/source/networking/MLOSCListener.cpp
-        # madronalib/source/JuceApp/MLAppState.cpp
-        # soundplane/Source/Zone.cpp
-        # SoundplaneModel.cpp
-        # SoundplaneMECOutput.cpp
-
-        #deprecated
-        # madronalib/source/deprecated/MLParameter.cpp
-        # madronalib/source/deprecated/MLDebug.cpp
+#        madronalib/source/deprecated/MLDSPDeprecated.cpp
+#        madronalib/source/deprecated/MLVectorDeprecated.cpp
+#        Zone.cpp
+        SpliteModel.cpp
         )
 
 #TODO look at new fpu handling
