@@ -1,0 +1,6 @@
+[submodule "splite/soundplane"]
+	path = splite/soundplane
+	url = https://github.com/madronalabs/soundplane
+[submodule "splite/madronalib"]
+	path = splite/madronalib
+	url = https://github.com/madronalabs/madronalib
