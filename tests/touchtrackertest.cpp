@@ -18,7 +18,29 @@ const int kMaxTouch = 8;
 class TouchTrackerTest : public SoundplaneDriverListener
 {
 public:
-    TouchTrackerTest() : 
+    TouchTrackerTest()
+    {
+    }
+
+    ~TouchTrackerTest() = default;
+    void onStartup(void) override {
+        ;
+    }
+    void onFrame(const SensorFrame& frame) override {
+        ;
+    }
+
+    void onError(int err, const char* errStr) override {
+        ;
+    }
+
+    void onClose(void) override {
+        ;
+    }
+
+
+#ifdef OLDCODE
+    TouchTrackerTest() :
         mTracker(kSoundplaneWidth,kSoundplaneHeight),
         mSurface(kSoundplaneWidth, kSoundplaneHeight),
         mCalibration(kSoundplaneWidth, kSoundplaneHeight),
@@ -104,6 +126,9 @@ private:
     MLSignal mSurface;
     MLSignal mCalibration;
     TouchTracker mTracker;
+
+#endif
+
 };
 
 } // namespace
@@ -122,7 +147,7 @@ int main(int argc, const char * argv[]) {
     signal(SIGINT, intHandler);
 
     TouchTrackerTest listener;
-    auto driver = SoundplaneDriver::create(&listener);
+    auto driver = SoundplaneDriver::create(listener);
 
     std::cout << "TouchTrackerTest\n";
     std::cout << "Initial device state: " << driver->getDeviceState() << std::endl;

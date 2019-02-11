@@ -21,6 +21,25 @@ public:
     {
     }
 
+    ~HelloSoundplaneDriverListener() = default;
+    void onStartup(void) override {
+        ;
+    }
+    void onFrame(const SensorFrame& frame) override {
+        ;
+    }
+
+    void onError(int err, const char* errStr) override {
+        ;
+    }
+
+    void onClose(void) override {
+        ;
+    }
+
+
+#ifdef OLDCODE
+
     virtual void deviceStateChanged(SoundplaneDriver& driver, MLSoundplaneState s) override
     {
         std::cout << "Device state changed: " << s << std::endl;
@@ -50,8 +69,8 @@ private:
     int mFrameCounter = 0;
     float mC[512];
     bool mHasC = false;
+#endif
 };
-
 }
 
 static volatile int keepRunning = 1;
@@ -68,7 +87,7 @@ int main(int argc, const char * argv[])
 {
     signal(SIGINT, intHandler);
     HelloSoundplaneDriverListener listener;
-    auto driver = SoundplaneDriver::create(&listener);
+    auto driver = SoundplaneDriver::create(listener);
 
     std::cout << "Hello, Soundplane?\n";
     std::cout << "Initial device state: " << driver->getDeviceState() << std::endl;

@@ -1,8 +1,11 @@
-# basic test apps
+# basic testapp
+
+
 set(SOUNDPLANETEST_SRC "soundplanetest.cpp")
 include_directories ("${PROJECT_SOURCE_DIR}/splite")
 add_executable(soundplanetest ${SOUNDPLANETEST_SRC})
 target_link_libraries (soundplanetest splite portaudio)
+
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
   target_link_libraries(soundplanetest atomic)
 endif()
@@ -17,8 +20,8 @@ endif(APPLE)
 set(TOUCHTRACKERTEST_SRC "touchtrackertest.cpp")
 include_directories ("${PROJECT_SOURCE_DIR}/splite")
 add_executable(touchtrackertest ${TOUCHTRACKERTEST_SRC})
-
 target_link_libraries (touchtrackertest splite portaudio)
+
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
   target_link_libraries(touchtrackertest atomic)
 endif()
@@ -27,3 +30,4 @@ target_link_libraries(touchtrackertest  "-framework CoreServices -framework Core
 elseif(UNIX) 
 target_link_libraries(touchtrackertest pthread libusb)
 endif(APPLE)
+
