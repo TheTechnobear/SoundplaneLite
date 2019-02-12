@@ -2,9 +2,9 @@ project(splite)
 
 include_directories(
         "${PROJECT_SOURCE_DIR}/../../../external/libusb"
-        "${PROJECT_SOURCE_DIR}/../../../external/portaudio"
-        "${PROJECT_SOURCE_DIR}/../../../external/cJSON"
-        "${PROJECT_SOURCE_DIR}/../../../external/oscpack"
+#        "${PROJECT_SOURCE_DIR}/../../../external/portaudio"
+#        "${PROJECT_SOURCE_DIR}/../../../external/cJSON"
+#        "${PROJECT_SOURCE_DIR}/../../../external/oscpack"
 )
 
 set(SPL_H
@@ -25,7 +25,6 @@ set(SPL_SRC
         soundplane/Source/TouchTracker.cpp
         )
 
-#TODO look at new fpu handling
 if (APPLE)
     list(APPEND SPL_SRC
             soundplane/SoundplaneLib/MacSoundplaneDriver.cpp
@@ -40,7 +39,7 @@ endif (APPLE)
 
 add_library(splite SHARED ${SPL_SRC} ${SPL_H})
 
-target_link_libraries(splite oscpack portaudio cjson)
+#target_link_libraries(splite oscpack portaudio cjson)
 
 if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
     target_link_libraries(splite atomic)

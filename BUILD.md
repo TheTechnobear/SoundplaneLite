@@ -1,14 +1,7 @@
 # Initialise repo
 
-to grab just the soundplane and madronalib submodules (preferred)
-
-    git submodule update --init splite
-
-alternatively, you could use 
-
     git submodule update --init --recursive
 
-this will however also bring in Juce which we do not use at this time.
 
 # Dependancies
 CMake
@@ -21,7 +14,6 @@ libusb
 
     // libaries used
     sudo apt-get install libusb-1.0-0-dev
-    sudo apt-get install libasound2-dev (linux)
     mkdir build
     cd build
     cmake .. 
