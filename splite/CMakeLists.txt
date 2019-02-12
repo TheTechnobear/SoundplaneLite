@@ -8,32 +8,34 @@ include_directories(
 )
 
 set(SPL_H
-        soundplane/SoundplaneLib/SoundplaneDriver.h
-        soundplane/SoundplaneLib/SoundplaneModelA.h
-        soundplane/SoundplaneLib/ThreadUtility.h
-        soundplane/SoundplaneLib/Unpacker.h
-        soundplane/SoundplaneLib/SensorFrame.h
-        soundplane/Source/TouchTracker.h
-        soundplane/Source/Touch.h
+        splib/SoundplaneDriver.h
+        splib/SoundplaneModelA.h
+        splib/ThreadUtility.h
+        splib/Unpacker.h
+        splib/SensorFrame.h
+        splib/TouchTracker.h
+        splib/Touch.h
+        SPLiteDevice.h 
         )
 
 set(SPL_SRC
-        soundplane/SoundplaneLib/SoundplaneDriver.cpp
-        soundplane/SoundplaneLib/SoundplaneModelA.cpp
-        soundplane/SoundplaneLib/ThreadUtility.cpp
-        soundplane/SoundplaneLib/SensorFrame.cpp
-        soundplane/Source/TouchTracker.cpp
-        SPLiteDevice.h SPLiteDevice.cpp)
+        splib/SoundplaneDriver.cpp
+        splib/SoundplaneModelA.cpp
+        splib/ThreadUtility.cpp
+        splib/SensorFrame.cpp
+        splib/TouchTracker.cpp
+	SPLiteDevice.cpp
+	)
 
 if (APPLE)
     list(APPEND SPL_SRC
-            soundplane/SoundplaneLib/MacSoundplaneDriver.cpp
-            soundplane/SoundplaneLib/MacSoundplaneDriver.h
+            splib/MacSoundplaneDriver.cpp
+            splib/MacSoundplaneDriver.h
             )
 elseif (UNIX)
     list(APPEND SPL_SRC
-            soundplane/SoundplaneLib/LibusbSoundplaneDriver.cpp
-            soundplane/SoundplaneLib/LibusbSoundplaneDriver.h
+            splib/LibusbSoundplaneDriver.cpp
+            splib/LibusbSoundplaneDriver.h
             )
 endif (APPLE)
 
@@ -53,8 +55,7 @@ endif (APPLE)
 
 target_include_directories(splite PUBLIC
         .
-        soundplane/SoundplaneLib
-        soundplane/Source
+        splib
         )
 
 add_subdirectory(tests)
