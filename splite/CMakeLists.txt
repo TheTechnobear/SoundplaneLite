@@ -23,7 +23,7 @@ set(SPL_SRC
         soundplane/SoundplaneLib/ThreadUtility.cpp
         soundplane/SoundplaneLib/SensorFrame.cpp
         soundplane/Source/TouchTracker.cpp
-        )
+        SPLiteDevice.h SPLiteDevice.cpp)
 
 if (APPLE)
     list(APPEND SPL_SRC

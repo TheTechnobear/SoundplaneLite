@@ -29,3 +29,18 @@ elseif(UNIX)
 target_link_libraries(touchtrackertest pthread libusb)
 endif(APPLE)
 
+
+# splitedev test app
+set(SPLITEDEVTEST_SRC "splitedevtest.cpp")
+include_directories ("${PROJECT_SOURCE_DIR}/..")
+add_executable(splitedevtest ${SPLITEDEVTEST_SRC})
+target_link_libraries (splitedevtest splite portaudio)
+
+if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+  target_link_libraries(splitedevtest atomic)
+endif()
+if(APPLE)
+  target_link_libraries(splitedevtest  "-framework CoreServices -framework CoreFoundation -framework IOKit -framework CoreAudio")
+elseif(UNIX)
+  target_link_libraries(splitedevtest pthread libusb)
+endif(APPLE)
