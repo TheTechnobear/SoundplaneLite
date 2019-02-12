@@ -36,7 +36,6 @@ elseif (UNIX)
             soundplane/SoundplaneLib/LibusbSoundplaneDriver.cpp
             soundplane/SoundplaneLib/LibusbSoundplaneDriver.h
             )
-    endif ()
 endif (APPLE)
 
 add_library(splite SHARED ${SPL_SRC} ${SPL_H})

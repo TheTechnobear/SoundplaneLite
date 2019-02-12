@@ -1,8 +1,6 @@
 # basic testapp
-
-
 set(SOUNDPLANETEST_SRC "soundplanetest.cpp")
-include_directories ("${PROJECT_SOURCE_DIR}/splite")
+include_directories ("${PROJECT_SOURCE_DIR}/..")
 add_executable(soundplanetest ${SOUNDPLANETEST_SRC})
 target_link_libraries (soundplanetest splite portaudio)
 
@@ -18,7 +16,7 @@ endif(APPLE)
 
 # test touchtracker app
 set(TOUCHTRACKERTEST_SRC "touchtrackertest.cpp")
-include_directories ("${PROJECT_SOURCE_DIR}/splite")
+include_directories ("${PROJECT_SOURCE_DIR}/..")
 add_executable(touchtrackertest ${TOUCHTRACKERTEST_SRC})
 target_link_libraries (touchtrackertest splite portaudio)
 

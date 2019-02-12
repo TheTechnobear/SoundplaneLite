@@ -81,5 +81,4 @@ add_subdirectory(external/moodycamel)
 
 
 add_subdirectory(splite)
-add_subdirectory(tests)
 
