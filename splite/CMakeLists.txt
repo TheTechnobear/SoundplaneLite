@@ -8,23 +8,23 @@ include_directories(
 )
 
 set(SPL_H
-        madronalib/include/madronalib.h
-        madronalib/include/MLDSP.h
-        madronalib/include/MLCore.h
-
-        madronalib/source/core/MLPath.h
-        madronalib/source/core/MLSymbol.h
-        madronalib/source/core/MLTimer.h
-        madronalib/source/core/MLText.h
-
-        madronalib/source/DSP/MLDSPUtils.h
-        madronalib/source/DSP/MLScalarMath.h
-
-        madronalib/source/matrix/MLSignal.h
-
-        madronalib/source/model/MLModel.h
-        madronalib/source/model/MLProperty.h
-        madronalib/source/model/MLPropertySet.h
+#        madronalib/include/madronalib.h
+#        madronalib/include/MLDSP.h
+#        madronalib/include/MLCore.h
+#
+#        madronalib/source/core/MLPath.h
+#        madronalib/source/core/MLSymbol.h
+#        madronalib/source/core/MLTimer.h
+#        madronalib/source/core/MLText.h
+#
+#        madronalib/source/DSP/MLDSPUtils.h
+#        madronalib/source/DSP/MLScalarMath.h
+#
+#        madronalib/source/matrix/MLSignal.h
+#
+#        madronalib/source/model/MLModel.h
+#        madronalib/source/model/MLProperty.h
+#        madronalib/source/model/MLPropertySet.h
 
 
         soundplane/SoundplaneLib/SoundplaneDriver.h
@@ -38,21 +38,21 @@ set(SPL_H
 #        madronalib/source/deprecated/MLDSPDeprecated.cpp
 #        madronalib/source/deprecated/MLVectorDeprecated.h
 #        Zone.h
-        SpliteModel.h
+#        SpliteModel.h
 
         )
 
 set(SPL_SRC
-        madronalib/source/core/MLPath.cpp
-        madronalib/source/core/MLSymbol.cpp
-        madronalib/source/core/MLTimer.cpp
-        madronalib/source/core/MLText.cpp
-
-        madronalib/source/DSP/MLScalarMath.h
-        madronalib/source/matrix/MLSignal.cpp
-        madronalib/source/model/MLModel.cpp
-        madronalib/source/model/MLProperty.cpp
-        madronalib/source/model/MLPropertySet.cpp
+#        madronalib/source/core/MLPath.cpp
+#        madronalib/source/core/MLSymbol.cpp
+#        madronalib/source/core/MLTimer.cpp
+#        madronalib/source/core/MLText.cpp
+#
+#        madronalib/source/DSP/MLScalarMath.h
+#        madronalib/source/matrix/MLSignal.cpp
+#        madronalib/source/model/MLModel.cpp
+#        madronalib/source/model/MLProperty.cpp
+#        madronalib/source/model/MLPropertySet.cpp
 
 
         soundplane/SoundplaneLib/SoundplaneDriver.cpp
@@ -65,7 +65,7 @@ set(SPL_SRC
 #        madronalib/source/deprecated/MLDSPDeprecated.cpp
 #        madronalib/source/deprecated/MLVectorDeprecated.cpp
 #        Zone.cpp
-        SpliteModel.cpp
+#        SpliteModel.cpp
         )
 
 #TODO look at new fpu handling

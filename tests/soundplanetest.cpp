@@ -11,67 +11,52 @@
 #include "SoundplaneModelA.h"
 //#include "MLSignal.h"
 
-namespace
-{
+namespace {
 
-class HelloSoundplaneDriverListener : public SoundplaneDriverListener
-{
+class HelloSoundplaneDriverListener : public SoundplaneDriverListener {
 public:
-    HelloSoundplaneDriverListener()    
-    {
+    HelloSoundplaneDriverListener() {
     }
 
     ~HelloSoundplaneDriverListener() = default;
+
     void onStartup(void) override {
         ;
     }
-    void onFrame(const SensorFrame& frame) override {
-        ;
+
+    void onFrame(const SensorFrame &frame) override {
+        static unsigned count;
+        if ((count++ % 1000) == 0) {
+            dumpFrameStats(std::cout, frame);
+            dumpFrameAsASCII(std::cout,frame);
+//            dumpFrame(std::cout, frame);
+        }
     }
 
-    void onError(int err, const char* errStr) override {
-        ;
+    void onError(int err, const char *errStr) override {
+        switch (err) {
+            case kDevDataDiffTooLarge:
+                std::cerr << "error: frame difference too large: " << errStr << "\n";
+//                beginCalibrate();
+                break;
+            case kDevGapInSequence:
+//                    std::cerr << "note: gap in sequence " << errStr << "\n";
+                break;
+            case kDevReset:
+                std::cerr << "isoch stalled, resetting " << errStr << "\n";
+                break;
+            case kDevPayloadFailed:
+                std::cerr << "payload failed at sequence " << errStr << "\n";
+                break;
+        }
     }
 
     void onClose(void) override {
         ;
     }
+}; // listener class
 
-
-#ifdef OLDCODE
-
-    virtual void deviceStateChanged(SoundplaneDriver& driver, MLSoundplaneState s) override
-    {
-        std::cout << "Device state changed: " << s << std::endl;
-    }
-
-    virtual void receivedFrame(SoundplaneDriver& driver, const float* data, int size) override
-    {
-        if (mHasC==false) {
-            memcpy(mC,data,sizeof(float)*512);
-            mHasC=true;
-        }
-        else if (mFrameCounter == 0) {
-            float sum = 0.0;
-            std::cout << "Soundplane data [" << size << "] :"; 
-            for(int i=0;i<size;i++){
-                if ((i % 64)==0) std::cout << std::endl;
-                float v= (data[i] - mC[i]) * 1000.0;
-                std::cout << std::fixed << std::setw(6) << std::setprecision(4) << v << ",";
-                sum += v;
-            }
-            std::cout << std::endl;
-            std::cout << "Sum : " << sum << std::endl;
-        }
-        mFrameCounter = (mFrameCounter + 1) % 5000;
-    }
-private:
-    int mFrameCounter = 0;
-    float mC[512];
-    bool mHasC = false;
-#endif
-};
-}
+} // namespace
 
 static volatile int keepRunning = 1;
 void intHandler(int dummy) {
@@ -83,6 +68,39 @@ void intHandler(int dummy) {
     keepRunning = 0;
 }
 
+const int kModelDefaultCarriersSize = 40;
+const unsigned char kModelDefaultCarriers[kModelDefaultCarriersSize] =
+    {
+        // 40 default carriers.  avoiding 32 (gets aliasing from 16)
+        3, 4, 5, 6, 7,
+        8, 9, 10, 11, 12,
+        13, 14, 15, 16, 17,
+        18, 19, 20, 21, 22,
+        23, 24, 25, 26, 27,
+        28, 29, 30, 31, 33,
+        34, 35, 36, 37, 38,
+        39, 40, 41, 42, 43
+    };
+
+static const int kStandardCarrierSets = 16;
+static void makeStandardCarrierSet(SoundplaneDriver::Carriers &carriers, int set)
+{
+    int startOffset = 2;
+    int skipSize = 2;
+    int gapSize = 4;
+    int gapStart = set*skipSize + startOffset;
+    carriers[0] = carriers[1] = 0;
+    for(int i=startOffset; i<gapStart; ++i)
+    {
+        carriers[i] = kModelDefaultCarriers[i];
+    }
+    for(int i=gapStart; i<kSoundplaneNumCarriers; ++i)
+    {
+        carriers[i] = kModelDefaultCarriers[i + gapSize];
+    }
+}
+
+
 int main(int argc, const char * argv[])
 {
     signal(SIGINT, intHandler);
@@ -90,7 +108,18 @@ int main(int argc, const char * argv[])
     auto driver = SoundplaneDriver::create(listener);
 
     std::cout << "Hello, Soundplane?\n";
-    std::cout << "Initial device state: " << driver->getDeviceState() << std::endl;
+    driver->start();
+    while( driver->getDeviceState() != kDeviceHasIsochSync) {
+        sleep(1);
+        std::cout << "device state: " << driver->getDeviceState() << std::endl;
+    }
+
+    SoundplaneDriver::Carriers c;
+    makeStandardCarrierSet(c,kStandardCarrierSets);
+    driver->setCarriers(c);
+    unsigned long carrierMask = 0xFFFFFFFF;
+    driver->enableCarriers(~carrierMask);
+
 
     while(keepRunning)
     {

@@ -1,162 +1,183 @@
 #include <iostream>
-#include <chrono>
-#include <thread>
 #include <unistd.h>
-#include <signal.h>
-
 #include <iomanip>
-#include <string.h>
 
 #include <SoundplaneDriver.h>
 #include "SoundplaneModelA.h"
-#include "MLSignal.h"
 #include "TouchTracker.h"
+
+static volatile bool keepRunning = 1;
+
+const int kModelDefaultCarriersSize = 40;
+const unsigned char kModelDefaultCarriers[kModelDefaultCarriersSize] =
+    {
+        // 40 default carriers.  avoiding 32 (gets aliasing from 16)
+        3, 4, 5, 6, 7,
+        8, 9, 10, 11, 12,
+        13, 14, 15, 16, 17,
+        18, 19, 20, 21, 22,
+        23, 24, 25, 26, 27,
+        28, 29, 30, 31, 33,
+        34, 35, 36, 37, 38,
+        39, 40, 41, 42, 43
+    };
+
+static const int kStandardCarrierSets = 16;
+static void makeStandardCarrierSet(SoundplaneDriver::Carriers &carriers, int set)
+{
+    int startOffset = 2;
+    int skipSize = 2;
+    int gapSize = 4;
+    int gapStart = set*skipSize + startOffset;
+    carriers[0] = carriers[1] = 0;
+    for(int i=startOffset; i<gapStart; ++i)
+    {
+        carriers[i] = kModelDefaultCarriers[i];
+    }
+    for(int i=gapStart; i<kSoundplaneNumCarriers; ++i)
+    {
+        carriers[i] = kModelDefaultCarriers[i + gapSize];
+    }
+}
+
+
 
 namespace {
 
 const int kMaxTouch = 8;
-class TouchTrackerTest : public SoundplaneDriverListener
-{
+class TouchTrackerTest : public SoundplaneDriverListener {
 public:
-    TouchTrackerTest()
-    {
+    TouchTrackerTest() : driver_(nullptr) {
+        driver_ = SoundplaneDriver::create(*this);
     }
 
     ~TouchTrackerTest() = default;
-    void onStartup(void) override {
-        ;
-    }
-    void onFrame(const SensorFrame& frame) override {
-        ;
+    void start() {
+        keepRunning = true;
+        driver_->start();
     }
 
-    void onError(int err, const char* errStr) override {
-        ;
+    void stop() {
+        keepRunning = false;
+        delete driver_.release();
+        driver_ = nullptr;
+    }
+
+    void onStartup(void) override {
+        isCarrierSet_ = false;
+        isCal_ = false;
+
+        tracker_.setRotate(false);
+        tracker_.setThresh( 0.05f);
+        tracker_.setLopassZ(100.0f);
+    }
+
+
+    void onFrame(const SensorFrame &frame) override {
+        if(!driver_) return;
+        auto state = driver_->getDeviceState();
+
+        if(state == kDeviceHasIsochSync) {
+            if (!isCarrierSet_) {
+                makeStandardCarrierSet(carriers_, kStandardCarrierSets);
+                driver_->setCarriers(carriers_);
+                unsigned long carrierMask = 0xFFFFFFFF;
+                driver_->enableCarriers(~carrierMask);
+                isCarrierSet_ = true;
+
+                // start calibration
+                stats_.clear();
+                isCal_ =false;
+                tracker_.clear();
+            } else if (!isCal_) {
+                stats_.accumulate(frame);
+                if (stats_.getCount() >= kSoundplaneCalibrateSize) {
+                    SensorFrame mean = clamp(stats_.mean(), 0.0001f, 1.f);
+                    calibrateMeanInv_ = divide(fill(1.f), mean);
+                    isCal_ = true;
+                }
+            } else {
+                calibratedFrame_ = subtract(multiply(frame, calibrateMeanInv_), 1.0f);
+                SensorFrame curvature = tracker_.preprocess(calibratedFrame_);
+                TouchArray t = tracker_.process(curvature, maxTouches_);
+                outputTouches(t);
+            }
+        }
+    }
+
+    void onError(int err, const char *errStr) override {
+        switch (err) {
+            case kDevDataDiffTooLarge:
+                std::cerr << "error: frame difference too large: " << errStr << std::endl;
+                stats_.clear();
+                isCal_ =false;
+                break;
+            case kDevGapInSequence:
+                std::cerr << "note: gap in sequence " << errStr << std::endl;
+                break;
+            case kDevReset:
+                std::cerr << "isoch stalled, resetting " << errStr << std::endl;
+                break;
+            case kDevPayloadFailed:
+                std::cerr << "payload failed at sequence " << errStr << std::endl;
+                break;
+        }
     }
 
     void onClose(void) override {
-        ;
+        keepRunning = false;
     }
 
-
-#ifdef OLDCODE
-    TouchTrackerTest() :
-        mTracker(kSoundplaneWidth,kSoundplaneHeight),
-        mSurface(kSoundplaneWidth, kSoundplaneHeight),
-        mCalibration(kSoundplaneWidth, kSoundplaneHeight),
-        mTest(kSoundplaneWidth, kSoundplaneHeight)
-    {
-        mTracker.setSampleRate(kSoundplaneSampleRate);
-        mTouchFrame.setDims(kTouchWidth, kSoundplaneMaxTouches);
-        mTracker.setMaxTouches(kMaxTouch);
-        mTracker.setLopass(100);
-        //mTracker.setThresh(0.005000);
-        mTracker.setThresh(0.005000);
-        mTracker.setZScale(0.700000);
-        mTracker.setForceCurve(0.250000);
-        mTracker.setTemplateThresh(0.279104);
-        mTracker.setBackgroundFilter(0.050000);
-        mTracker.setQuantize(1);
-        mTracker.setRotate(0);
-        //mTracker.setNormalizeMap(sig)
-    }
-
-    virtual void deviceStateChanged(SoundplaneDriver& driver, MLSoundplaneState s) override {
-        std::cout << "Device state changed: " << s << std::endl;
-    }
-    void dumpTouches() {
+    void outputTouches(TouchArray& t) {
         std::cout << std::fixed << std::setw(6) << std::setprecision(4);
         for(int i=0; i<kMaxTouch; ++i)
         {
-            std::cout << " x:" << mTouchFrame(xColumn, i);
-            std::cout << " y:" << mTouchFrame(yColumn, i);
-            std::cout << " z:" << mTouchFrame(zColumn, i);
-            //cout << mTouchFrame(dzColumn, i);
-            //cout << mTouchFrame(ageColumn, i;
-            //cout << mTouchFrame(dtColumn, i);
-            std::cout << " n:" << mTouchFrame(noteColumn, i);
-            //cout << mTouchFrame(reservedColumn, i);
-            std::cout << std::endl;
-        }
-    }
-
-    virtual void receivedFrame(SoundplaneDriver& driver, const float* data, int size) override {
-        if (!mHasCalibration)
-        {
-            memcpy(mCalibration.getBuffer(), data, sizeof(float) * size);
-            mHasCalibration = true;
-            mTracker.setCalibration(mCalibration);
-            std::cout << "calibration\n";
-            mCalibration.dumpASCII(std::cout);
-            std::cout << "============\n";
-
-//            mTracker.setDefaultNormalizeMap(); // ?
-        }
-        else 
-        {
-            memcpy(mSurface.getBuffer(), data, sizeof(float) * size);
-
-
-            mTest = mSurface;
-            mTest.subtract(mCalibration);
-            mTracker.setInputSignal(&mTest);
-            mTracker.setOutputSignal(&mTouchFrame);
-            mTracker.process(1);
-
-            if (mFrameCounter == 0) {
-                mTest.scale(100.f);
-                mTest.flipVertical();
-
-                std::cout << "\n";
-                mTest.dumpASCII(std::cout);
-                mTest.dump(std::cout);
-                dumpTouches();
+            if(t[i].state != kTouchStateInactive) {
+                std::cout << " i:" << i;
+                std::cout << " x:" << t[i].x;
+                std::cout << " y:" << t[i].y;
+                std::cout << " z:" << t[i].z;
+//                std::cout << " n:" << t[i].note;
+                std::cout << std::endl;
             }
-
         }
-
-        mFrameCounter = (mFrameCounter + 1) % 1000;
     }
+
 
 private:
-    int mFrameCounter = 0;
-    bool mHasCalibration = false;
-    MLSignal mTest;
-    MLSignal mTouchFrame;
-    MLSignal mSurface;
-    MLSignal mCalibration;
-    TouchTracker mTracker;
+    bool isCal_ = false;
+    bool isCarrierSet_ = false;
 
-#endif
+    std::unique_ptr<SoundplaneDriver> driver_ =nullptr;
+    SoundplaneDriver::Carriers carriers_;
+
+    SensorFrameStats stats_;
+    SensorFrame calibrateMeanInv_{};
+    SensorFrame calibratedFrame_{};
+    unsigned maxTouches_ = kMaxTouches;
+    TouchTracker tracker_;
 
 };
 
 } // namespace
 
-static volatile int keepRunning = 1;
 void intHandler(int dummy) {
-    std::cerr  << "int handler called";
-    if(keepRunning==0) {
+    std::cerr << "TouchTrackerTest intHandler called" << std::endl;
+    if(!keepRunning) {
         sleep(1);
         exit(-1);
     }
-    keepRunning = 0;
+    keepRunning = false;
 }
-        
+
 int main(int argc, const char * argv[]) {
     signal(SIGINT, intHandler);
 
-    TouchTrackerTest listener;
-    auto driver = SoundplaneDriver::create(listener);
-
-    std::cout << "TouchTrackerTest\n";
-    std::cout << "Initial device state: " << driver->getDeviceState() << std::endl;
-
+    TouchTrackerTest test;
+    test.start();
     while(keepRunning) {
         sleep(1);
     }
-    delete driver.release();
-
-
+    test.stop();
     return 0;
 }
