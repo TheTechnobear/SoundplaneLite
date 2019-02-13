@@ -4,6 +4,7 @@
 profile
 **/build/*
 build
+splite_bela/splite_bela
 
 **/*.sublime-workspace
 cmake-build*/

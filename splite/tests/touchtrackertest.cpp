@@ -1,6 +1,7 @@
 #include <iostream>
 #include <unistd.h>
 #include <iomanip>
+#include <signal.h>
 
 #include <SoundplaneDriver.h>
 #include "SoundplaneModelA.h"

@@ -51,7 +51,7 @@ public:
     void start(void);
     void stop(void);
 
-    void addCallback(std::shared_ptr<SPLiteCallaback> cb) { listener_.addCallback(cb); }
+    void addCallback(std::shared_ptr<SPLiteCallback> cb) { listener_.addCallback(cb); }
 
     void maxTouches(unsigned t) { listener_.maxTouches(t); }
 
@@ -63,7 +63,7 @@ private:
 
         friend class SPLiteImpl_;
 
-        void addCallback(std::shared_ptr<SPLiteCallaback> cb);
+        void addCallback(std::shared_ptr<SPLiteCallback> cb);
 
         void maxTouches(unsigned t) { maxTouches_ = t; }
 
@@ -87,7 +87,7 @@ private:
         unsigned maxTouches_ = kMaxTouches;
         TouchTracker tracker_;
         SPLiteImpl_ *parent_;
-        std::vector<std::shared_ptr<SPLiteCallaback>> callbacks_;
+        std::vector<std::shared_ptr<SPLiteCallback>> callbacks_;
     } listener_;
 
     std::unique_ptr<SoundplaneDriver> driver_ = nullptr;
@@ -227,7 +227,7 @@ void SPLiteImpl_::Listener::dumpTouches(TouchArray &ta) {
     }
 }
 
-void SPLiteImpl_::Listener::addCallback(std::shared_ptr<SPLiteCallaback> cb) {
+void SPLiteImpl_::Listener::addCallback(std::shared_ptr<SPLiteCallback> cb) {
     callbacks_.push_back(cb);
 }
 
@@ -249,7 +249,7 @@ void SPLiteDevice::stop() {
     impl_->stop();
 }
 
-void SPLiteDevice::addCallback(std::shared_ptr<SPLiteCallaback> cb) {
+void SPLiteDevice::addCallback(std::shared_ptr<SPLiteCallback> cb) {
     impl_->addCallback(cb);
 }
 

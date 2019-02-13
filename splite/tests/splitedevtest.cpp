@@ -2,10 +2,11 @@
 #include <iostream>
 #include <unistd.h>
 #include <iomanip>
+#include <signal.h>
 
 static volatile bool keepRunning = 1;
 
-class TestCallback: public SPLiteCallaback {
+class TestCallback: public SPLiteCallback {
 public:
     virtual ~TestCallback() = default;
 private:

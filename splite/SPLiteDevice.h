@@ -3,9 +3,9 @@
 #include <memory>
 #include <vector>
 
-class SPLiteCallaback {
+class SPLiteCallback {
 public:
-    virtual ~SPLiteCallaback() = default;
+    virtual ~SPLiteCallback() = default;
     virtual void onInit()   {;}
     virtual void onFrame()  {;}
     virtual void onDeinit() {;}
@@ -22,7 +22,7 @@ public:
     virtual ~SPLiteDevice();
     void start();
     void stop();
-    void addCallback(std::shared_ptr<SPLiteCallaback>);
+    void addCallback(std::shared_ptr<SPLiteCallback>);
     void maxTouches(unsigned);
 private:
     SPLiteImpl_* impl_;

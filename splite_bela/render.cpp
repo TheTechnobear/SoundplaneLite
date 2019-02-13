@@ -6,36 +6,36 @@
 AuxiliaryTask gSPLiteProcessTask;
 
 
+#include <iostream>
+
 class BelaSPCallback : public SPLiteCallback {
 public:
-	BelaMidiMecCallback() :	pitchbendRange_(48.0) {
+	BelaSPCallback() {
 		;
 	}
 	
-    virtual void touchOn(int touchId, float x, float y, float z) {
+   void touchOn(unsigned  tId, float x, float y, float z) override {
+        // std::cout << " touchOn:" << tId << " x:" << x  << " y:" << y << " z:" << z << std::endl;
     }
 
-    virtual void touchContinue(int touchId, float x, float y, float z) {
+    void touchContinue(unsigned tId, float x, float y, float z) override {
+        // std::cout << " touchContinue:" << tId << " x:" << x  << " y:" << y << " z:" << z << std::endl;
     }
 
-    virtual void touchOff(int touchId, float x, float y, float z) {
+    void touchOff(unsigned tId, float x, float y, float z) override {
+        // std::cout << " touchOff:" << tId << " x:" << x  << " y:" << y << " z:" << z << std::endl;
     }
-    
-    
-private:
-    float pitchbendRange_;
 };
 
 SPLiteDevice *gpDevice = nullptr;
-BelaSPCallback gCallback;
+auto gCallback = std::make_shared<BelaSPCallback>();
 
 bool setup(BelaContext *context, void *userData)
 {
-
 	gpDevice = new SPLiteDevice();
+    gpDevice->addCallback(gCallback);
     gpDevice->maxTouches(4);
     gpDevice->start();
-    gpDevice->addCallback(gCallback)
 	
     // Initialise auxiliary tasks
 
@@ -46,12 +46,12 @@ bool setup(BelaContext *context, void *userData)
 }
 
 // render is called 2750 per second (44000/16)
-const int decimation = 5;  // = 550/seconds
+// const int decimation = 5;  // = 550/seconds
 long renderFrame = 0;
 void render(BelaContext *context, void *userData)
 {
 
-	Bela_scheduleAuxiliaryTask(gSPLiteProcessTask);
+	// Bela_scheduleAuxiliaryTask(gSPLiteProcessTask);
 	
 	renderFrame++;
 	// silence audio buffer
@@ -65,7 +65,7 @@ void render(BelaContext *context, void *userData)
 
 void cleanup(BelaContext *context, void *userData)
 {
-	// gpDevice->removeCallback(gCallback);
-    gpDevice->stop();
+// 	// gpDevice->removeCallback(gCallback);
+	gpDevice->stop();
 	delete gpDevice;
 }

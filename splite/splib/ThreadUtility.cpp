@@ -171,4 +171,8 @@ void setThreadPriority(pthread_t inThread, uint32_t inPriority, bool inIsFixed)
     pthread_setschedparam(inThread, policy, &param);
 }
 
+void SetPriorityRealtimeAudio(pthread_t inThread) 
+{
+	setThreadPriority(inThread, 99, false);
+}
 #endif
