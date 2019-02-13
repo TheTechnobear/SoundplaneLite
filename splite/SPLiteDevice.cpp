@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <iomanip>
 
-#include <strstream>
+#include <sstream>
 
 #include <SoundplaneDriver.h>
 #include "SoundplaneModelA.h"
@@ -158,7 +158,7 @@ void SPLiteImpl_::Listener::onFrame(const SensorFrame &frame) {
 }
 
 void SPLiteImpl_::Listener::onError(int err, const char *errStr) {
-    std::strstream errstr;
+    std::stringstream errstr;
     switch (err) {
         case kDevDataDiffTooLarge:
             errstr << "error: frame difference too large: " << errStr;
@@ -176,7 +176,7 @@ void SPLiteImpl_::Listener::onError(int err, const char *errStr) {
             break;
     }
     for (auto cb : callbacks_) {
-        cb->onError(static_cast<unsigned int>(err), errstr.str());
+        cb->onError(static_cast<unsigned int>(err), errstr.str().c_str());
     }
 }
 
