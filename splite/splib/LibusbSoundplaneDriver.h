@@ -24,10 +24,7 @@
 class LibusbSoundplaneDriver : public SoundplaneDriver {
 public:
     LibusbSoundplaneDriver(SoundplaneDriverListener &listener);
-    ~LibusbSoundplaneDriver();
-
-
-//	using Carriers = std::array<unsigned char, kSoundplaneNumCarriers>;
+    ~LibusbSoundplaneDriver() override;
 
 
     //SoundplaneDriver
@@ -47,7 +44,7 @@ private:
      */
     class LibusbDevice {
     public:
-        LibusbDevice() {}
+        LibusbDevice() = default;
 
         /**
          * Handle may be nullptr.
@@ -86,7 +83,7 @@ private:
      */
     class LibusbClaimedDevice {
     public:
-        LibusbClaimedDevice() {}
+        LibusbClaimedDevice() = default;
 
         /**
          * This constructor assumes ownership of an underlying LibusbDevice
@@ -189,7 +186,7 @@ private:
         LibusbSoundplaneDriver *parent = nullptr;
         struct libusb_transfer *const transfer;
         LibusbUnpacker *unpacker = nullptr;
-        SoundplaneADataPacket packets[kSoundplaneANumIsochFrames];
+        SoundplaneADataPacket packets[kSoundplaneANumIsochFrames]{};
         /**
          * Only an integer fraction of the allocated buffers are ever being
          * processed by libusb. The other ones are kept in order to be able
@@ -207,7 +204,7 @@ private:
          *
          * @see kInFlightMultiplier
          */
-        Transfer *nextTransfer;
+        Transfer *nextTransfer{};
     };
 
     using Transfers = std::array<std::array<Transfer, kBuffersPerEndpoint>, kSoundplaneANumEndpoints>;
@@ -358,25 +355,8 @@ private:
     std::atomic<const unsigned long *> mEnableCarriersRequest;
 
 
-    SensorFrame mWorkingFrame{};
-    SensorFrame mPrevFrame{};
     static const int kMaxErrorStringSize = 256;
     char mErrorBuf[kMaxErrorStringSize];
-
-
-    ///////////////////// temp
-    const int kSoundplaneWidth = 64;
-    const int kSoundplaneHeight = 8;
-
-    const int kSoundplaneABuffersExp = 3;
-    const int kSoundplaneABuffers = 1 << kSoundplaneABuffersExp;
-    const int kSoundplaneABuffersMask = kSoundplaneABuffers - 1;
-    const int kSoundplaneOutputBufFrames = 128;
-
-//    static constexpr int kSoundplaneOutputFrameLength = kSoundplaneWidth * kSoundplaneHeight;
-//    using SoundplaneOutputFrame = std::array<float, kSoundplaneOutputFrameLength>;
-
-
 };
 
 #endif // __LIBUSB_SOUNDPLANE_DRIVER__

@@ -1,5 +1,7 @@
 project(splite)
 
+#use cmake -DSPLITE_FORCE_LIBUSB=ON  to force libusb usage on mac
+#set(SPLITE_FORCE_LIBUSB ON)
 
 include_directories(
         "${PROJECT_SOURCE_DIR}/../../../external/libusb"
@@ -28,32 +30,24 @@ set(SPL_SRC
         SPLiteDevice.cpp
         )
 
-if (APPLE)
+find_library(LIBUSB_LIB NAME libusb)
+
+if (APPLE AND NOT SPLITE_FORCE_LIBUSB)
+    message("using macOS USB")
     list(APPEND SPL_SRC
             splib/MacSoundplaneDriver.cpp
             splib/MacSoundplaneDriver.h
             )
-elseif (UNIX)
+else ()
+#elseif (UNIX)
+    message("using LIBUSB")
     list(APPEND SPL_SRC
             splib/LibusbSoundplaneDriver.cpp
             splib/LibusbSoundplaneDriver.h
             )
-endif (APPLE)
+endif (APPLE AND NOT SPLITE_FORCE_LIBUSB)
 
 
-#temp test libusb compilation on macos
-#if (APPLE)
-#    find_library(LIBUSB_LIB NAME libusb PATHS /usr/local/lib)
-#    find_path(LIBUSB_INC NAME libusb.h PATHS /usr/include/libusb-1.0 /usr/local/include/libusb-1.0)
-#    include_directories(
-#            "${LIBUSB_INC}"
-#    )
-#
-#    list(APPEND SPL_SRC
-#            splib/LibusbSoundplaneDriver.cpp
-#            splib/LibusbSoundplaneDriver.h
-#            )
-#endif (APPLE)
 
 add_library(splite SHARED ${SPL_SRC} ${SPL_H})
 
@@ -63,11 +57,12 @@ if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
     target_link_libraries(splite atomic)
 endif ()
 
-if (APPLE)
+if (APPLE AND NOT SPLITE_FORCE_LIBUSB)
     target_link_libraries(splite "-framework Cocoa -framework IOKit")
-elseif (UNIX)
+else ()
+#elseif (UNIX)
     target_link_libraries(splite "libusb" "dl" "pthread")
-endif (APPLE)
+endif (APPLE AND NOT SPLITE_FORCE_LIBUSB)
 
 target_include_directories(splite PUBLIC
         .

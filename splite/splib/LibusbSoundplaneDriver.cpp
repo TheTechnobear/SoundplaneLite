@@ -15,6 +15,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "ThreadUtility.h"
+
 namespace {
 
 constexpr int kInterfaceNumber = 0;
@@ -107,6 +109,8 @@ LibusbSoundplaneDriver::~LibusbSoundplaneDriver() {
 void LibusbSoundplaneDriver::start() {
     // create device grab thread
     mProcessThread = std::thread(&LibusbSoundplaneDriver::processThread, this);
+    SetPriorityRealtimeAudio(mProcessThread.native_handle());
+
 }
 
 int LibusbSoundplaneDriver::getDeviceState() const {
