@@ -21,21 +21,6 @@
 #include "SoundplaneDriver.h"
 #include "SoundplaneModelA.h"
 
-// constants that affect isochronous transfers
-const int kIsochBuffersExp = 3; // MLTEST 3
-const int kNumIsochBuffers = 1 << kIsochBuffersExp;
-const int kIsochBuffersMask = kNumIsochBuffers - 1;
-const int kIsochBuffersInFlight = 6; // AppleUSBAudioStream.h: 6
-const int kIsochFramesPerTransaction = 8; // MLTEST 20
-const int kIsochStartupFrames = 250; // MLTEST 500
-
-const int kPayloadBufferSize = sizeof(SoundplaneADataPacket)*kIsochFramesPerTransaction;
-
-// isoc frame data update rate in ms. see LowLatencyReadIsochPipeAsync docs in IOUSBLib.h.
-// This number is part of the lower limit on our possible latency.
-const int kIsochUpdateFrequency = 1;
-
-const int kMaxErrorStringSize = 256;
 
 class MacSoundplaneDriver : public SoundplaneDriver
 {
@@ -104,8 +89,25 @@ protected:
 	inline void setDeviceState(int state) { mDeviceState = state; }
 	
 private:
-	
-	struct K1IsocTransaction
+    // constants that affect isochronous transfers
+    static const int kIsochBuffersExp = 3; // MLTEST 3
+    static const int kNumIsochBuffers = 1 << kIsochBuffersExp;
+    static const int kIsochBuffersMask = kNumIsochBuffers - 1;
+    static const int kIsochBuffersInFlight = 6; // AppleUSBAudioStream.h: 6
+    static const int kIsochFramesPerTransaction = 8; // MLTEST 20
+    static const int kIsochStartupFrames = 250; // MLTEST 500
+
+    static const int kPayloadBufferSize = sizeof(SoundplaneADataPacket)*kIsochFramesPerTransaction;
+
+    // isoc frame data update rate in ms. see LowLatencyReadIsochPipeAsync docs in IOUSBLib.h.
+    // This number is part of the lower limit on our possible latency.
+    static const int kIsochUpdateFrequency = 1;
+
+    static const int kMaxErrorStringSize = 256;
+
+
+
+    struct K1IsocTransaction
 	{
 		UInt64						busFrameNumber = 0;
 		MacSoundplaneDriver			*parent = 0;

@@ -1,10 +1,11 @@
 project(splite)
 
+
 include_directories(
         "${PROJECT_SOURCE_DIR}/../../../external/libusb"
-#        "${PROJECT_SOURCE_DIR}/../../../external/portaudio"
-#        "${PROJECT_SOURCE_DIR}/../../../external/cJSON"
-#        "${PROJECT_SOURCE_DIR}/../../../external/oscpack"
+        #        "${PROJECT_SOURCE_DIR}/../../../external/portaudio"
+        #        "${PROJECT_SOURCE_DIR}/../../../external/cJSON"
+        #        "${PROJECT_SOURCE_DIR}/../../../external/oscpack"
 )
 
 set(SPL_H
@@ -15,7 +16,7 @@ set(SPL_H
         splib/SensorFrame.h
         splib/TouchTracker.h
         splib/Touch.h
-        SPLiteDevice.h 
+        SPLiteDevice.h
         )
 
 set(SPL_SRC
@@ -24,8 +25,8 @@ set(SPL_SRC
         splib/ThreadUtility.cpp
         splib/SensorFrame.cpp
         splib/TouchTracker.cpp
-	SPLiteDevice.cpp
-	)
+        SPLiteDevice.cpp
+        )
 
 if (APPLE)
     list(APPEND SPL_SRC
@@ -38,6 +39,21 @@ elseif (UNIX)
             splib/LibusbSoundplaneDriver.h
             )
 endif (APPLE)
+
+
+#temp test libusb compilation on macos
+#if (APPLE)
+#    find_library(LIBUSB_LIB NAME libusb PATHS /usr/local/lib)
+#    find_path(LIBUSB_INC NAME libusb.h PATHS /usr/include/libusb-1.0 /usr/local/include/libusb-1.0)
+#    include_directories(
+#            "${LIBUSB_INC}"
+#    )
+#
+#    list(APPEND SPL_SRC
+#            splib/LibusbSoundplaneDriver.cpp
+#            splib/LibusbSoundplaneDriver.h
+#            )
+#endif (APPLE)
 
 add_library(splite SHARED ${SPL_SRC} ${SPL_H})
 
