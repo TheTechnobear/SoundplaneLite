@@ -10,6 +10,9 @@ class TestCallback: public SPLiteCallback {
 public:
     virtual ~TestCallback() = default;
 private:
+    void onError(unsigned, const char* err) override {
+        std::cerr << err << std::endl;
+    }
     void touchOn(unsigned voice, float x, float y, float z) override {
         std::cout << " touchOn:" << voice;
         std::cout << " x:" << x;

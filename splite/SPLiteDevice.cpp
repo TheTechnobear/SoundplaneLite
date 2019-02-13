@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <iomanip>
 
+#include <strstream>
 
 #include <SoundplaneDriver.h>
 #include "SoundplaneModelA.h"
@@ -157,21 +158,25 @@ void SPLiteImpl_::Listener::onFrame(const SensorFrame &frame) {
 }
 
 void SPLiteImpl_::Listener::onError(int err, const char *errStr) {
+    std::strstream errstr;
     switch (err) {
         case kDevDataDiffTooLarge:
-            std::cerr << "error: frame difference too large: " << errStr << std::endl;
+            errstr << "error: frame difference too large: " << errStr;
             stats_.clear();
             isCal_ = false;
             break;
         case kDevGapInSequence:
-            std::cerr << "note: gap in sequence " << errStr << std::endl;
+            errstr << "note: gap in sequence " << errStr;
             break;
         case kDevReset:
-            std::cerr << "isoch stalled, resetting " << errStr << std::endl;
+            errstr << "isoch stalled, resetting " << errStr;
             break;
         case kDevPayloadFailed:
-            std::cerr << "payload failed at sequence " << errStr << std::endl;
+            errstr << "payload failed at sequence " << errStr;
             break;
+    }
+    for (auto cb : callbacks_) {
+        cb->onError(static_cast<unsigned int>(err), errstr.str());
     }
 }
 
