@@ -29,33 +29,38 @@ public:
         mSuccessCallback(std::move(successCallback)) {}
 
     void operator()(const SensorFrame &frame) {
-        if (mStartupCtr > kSoundplaneStartupFrames) {
+        if (mStarted) {
             float df = frameDiff(mPreviousFrame, frame);
             if (df < kMaxFrameDiff) {
                 // We are OK, the data gets out normally
                 mSuccessCallback(frame);
             } else {
                 // Possible sensor glitch.  also occurs when changing carriers.
-                mGlitchCallback(mStartupCtr, df, mPreviousFrame, frame);
+                mGlitchCallback(mFrameCtr, df, mPreviousFrame, frame);
                 reset();
             }
+        } else if (mFrameCtr > kSoundplaneStartupFrames) {
+            mStarted = true;
+            mSuccessCallback(frame);
         } else {
             // Wait for initialization
-            mStartupCtr++;
         }
+        mFrameCtr++;
 
         mPreviousFrame = frame;
     }
 
     void reset() {
-        mStartupCtr = 0;
+        mFrameCtr = 0;
+        mStarted = false;
     }
 
 private:
-    static const int kSoundplaneStartupFrames = 50;
+    static const unsigned kSoundplaneStartupFrames = 250;
 
     SensorFrame mPreviousFrame{};
-    int mStartupCtr = 0;
+    unsigned mFrameCtr = 0;
+    bool mStarted = false;
     GlitchCallback mGlitchCallback;
     SuccessCallback mSuccessCallback;
 };
@@ -426,9 +431,9 @@ void LibusbSoundplaneDriver::processThread() {
         Transfers transfers;
         LibusbClaimedDevice handle;
         auto anomalyFilter = makeAnomalyFilter(
-            [this](int startupCtr, float df, const SensorFrame &previousFrame, const SensorFrame &frame) {
+            [this](int frameCtr, float df, const SensorFrame &previousFrame, const SensorFrame &frame) {
 
-                snprintf(mErrorBuf, kMaxErrorStringSize, "(%d)", startupCtr);
+                snprintf(mErrorBuf, kMaxErrorStringSize, "frame(%d) ", frameCtr);
                 mListener.onError(kDevPayloadFailed, mErrorBuf);
             },
             [this](const SensorFrame &frame) {
