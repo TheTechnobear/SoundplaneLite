@@ -1,7 +1,7 @@
 project(splite)
 
 #use cmake -DSPLITE_FORCE_LIBUSB=ON  to force libusb usage on mac
-stringstream#set(SPLITE_FORCE_LIBUSB ON)
+#set(SPLITE_FORCE_LIBUSB ON)
 
 include_directories(
         "${PROJECT_SOURCE_DIR}/../../../external/libusb"
