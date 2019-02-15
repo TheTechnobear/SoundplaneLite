@@ -11,6 +11,8 @@
 #include "TouchTracker.h"
 
 
+#include <readerwriterqueue.h>
+
 const int kModelDefaultCarriersSize = 40;
 static const int kDefaultCarrierSet = 0;
 static const int kStandardCarrierSets = 16;
@@ -44,7 +46,7 @@ static void makeStandardCarrierSet(SoundplaneDriver::Carriers &carriers, int set
     }
     std::cerr << "makeStandardCarrierSet : " << set << std::endl;
     for (int i = 0; i < kSoundplaneNumCarriers; ++i) {
-    	std::cerr << " " << (unsigned) carriers[i];
+        std::cerr << " " << (unsigned) carriers[i];
     }
     std::cerr << std::endl;
 }
@@ -57,11 +59,15 @@ public:
     ~SPLiteImpl_(void) = default;
     void start(void);
     void stop(void);
+    unsigned process(void);
 
-    void addCallback(std::shared_ptr<SPLiteCallback> cb) { listener_.addCallback(cb); }
+    void addCallback(std::shared_ptr<SPLiteCallback> cb) {     callbacks_.push_back(cb);}
+    void maxTouches(unsigned t) { maxTouches_ = t;  }
 
-    void maxTouches(unsigned t) { listener_.maxTouches(t); }
-
+    void onStartup(void);
+    void onFrame(const SensorFrame &frame);
+    void onError(int err, const char *errStr);
+    void onClose(void);
 
 private:
     class Listener : public SoundplaneDriverListener {
@@ -70,9 +76,6 @@ private:
 
         friend class SPLiteImpl_;
 
-        void addCallback(std::shared_ptr<SPLiteCallback> cb);
-
-        void maxTouches(unsigned t) { maxTouches_ = t; }
 
         //SoundplaneDriverListener
         void onStartup(void) override;
@@ -82,26 +85,31 @@ private:
 
 
     private:
-        void dumpTouches(TouchArray &t);
-        void onTouches(TouchArray &t);
-
-        bool isCal_ = false;
-        bool isCarrierSet_ = false;
-        SoundplaneDriver::Carriers carriers_;
-        SensorFrameStats stats_;
-        SensorFrame calibrateMeanInv_{};
-        SensorFrame calibratedFrame_{};
-        unsigned maxTouches_ = kMaxTouches;
-        TouchTracker tracker_;
         SPLiteImpl_ *parent_;
-        std::vector<std::shared_ptr<SPLiteCallback>> callbacks_;
     } listener_;
 
+    void dumpTouches(TouchArray &t);
+    void onTouches(TouchArray &t);
+
+    bool isCal_ = false;
+    bool isCarrierSet_ = false;
+    SoundplaneDriver::Carriers carriers_;
+    SensorFrameStats stats_;
+    SensorFrame calibrateMeanInv_{};
+    SensorFrame calibratedFrame_{};
+    unsigned maxTouches_ = kMaxTouches;
+    TouchTracker tracker_;
+    std::vector<std::shared_ptr<SPLiteCallback>> callbacks_;
+
     std::unique_ptr<SoundplaneDriver> driver_ = nullptr;
+    moodycamel::ReaderWriterQueue<SensorFrame> messageQueue_;
 };
 
 //---------------------
-SPLiteImpl_::SPLiteImpl_() : listener_(this), driver_(nullptr) {
+SPLiteImpl_::SPLiteImpl_() :
+    listener_(this),
+    driver_(nullptr),
+    messageQueue_(100) {
     driver_ = SoundplaneDriver::create(listener_);
 }
 
@@ -114,7 +122,7 @@ void SPLiteImpl_::stop() {
     driver_ = nullptr;
 }
 
-void SPLiteImpl_::Listener::onStartup(void) {
+void SPLiteImpl_::onStartup(void) {
     isCarrierSet_ = false;
     isCal_ = false;
 
@@ -123,49 +131,10 @@ void SPLiteImpl_::Listener::onStartup(void) {
     tracker_.setLopassZ(100.0f);
 }
 
-
-void SPLiteImpl_::Listener::onFrame(const SensorFrame &frame) {
-    if (!parent_ || !parent_->driver_) return;
-    auto state = parent_->driver_->getDeviceState();
-
-    if (state == kDeviceHasIsochSync) {
-        if (!isCarrierSet_) {
-            makeStandardCarrierSet(carriers_, kDefaultCarrierSet);
-            parent_->driver_->setCarriers(carriers_);
-            unsigned long carrierMask = 0xFFFFFFFF;
-            parent_->driver_->enableCarriers(~carrierMask);
-            isCarrierSet_ = true;
-
-            // start calibration
-            stats_.clear();
-            isCal_ = false;
-            tracker_.clear();
-        } else if (!isCal_) {
-	    //std::cerr << "calibrating..." << std::endl;
-            stats_.accumulate(frame);
-            if (stats_.getCount() >= kSoundplaneCalibrateSize) {
-            	tracker_.clear();
-                SensorFrame mean = clamp(stats_.mean(), 0.0001f, 1.f);
-                calibrateMeanInv_ = divide(fill(1.f), mean);
-		//std::cerr << "calibration complete" << std::endl;
-                isCal_ = true;
-            }
-            for (auto cb : callbacks_) {
-                cb->onInit();
-            }
-        } else {
-            for (auto cb : callbacks_) {
-                cb->onFrame();
-            }
-            calibratedFrame_ = subtract(multiply(frame, calibrateMeanInv_), 1.0f);
-            SensorFrame curvature = tracker_.preprocess(calibratedFrame_);
-            TouchArray t = tracker_.process(curvature, maxTouches_);
-            onTouches(t);
-        }
-    }
+void SPLiteImpl_::onFrame(const SensorFrame &frame) {
+    messageQueue_.enqueue(frame);
 }
-
-void SPLiteImpl_::Listener::onError(int err, const char *errStr) {
+void SPLiteImpl_::onError(int err, const char *errStr) {
     std::stringstream errstr;
     switch (err) {
         case kDevDataDiffTooLarge:
@@ -189,14 +158,76 @@ void SPLiteImpl_::Listener::onError(int err, const char *errStr) {
     }
 }
 
-void SPLiteImpl_::Listener::onClose(void) {
+void SPLiteImpl_::onClose(void) {
     for (auto cb : callbacks_) {
         cb->onDeinit();
     }
 }
 
 
-void SPLiteImpl_::Listener::onTouches(TouchArray &ta) {
+
+unsigned SPLiteImpl_::process(void) {
+    if (!driver_) return 0;
+    auto state = driver_->getDeviceState();
+    if (state != kDeviceHasIsochSync)return 0;
+    SensorFrame frame;
+
+    unsigned count = 0;
+    while (messageQueue_.try_dequeue(frame)) {
+        count++;
+        if (!isCarrierSet_) {
+            makeStandardCarrierSet(carriers_, kDefaultCarrierSet);
+            driver_->setCarriers(carriers_);
+            unsigned long carrierMask = 0xFFFFFFFF;
+            driver_->enableCarriers(~carrierMask);
+            isCarrierSet_ = true;
+
+            // start calibration
+            stats_.clear();
+            isCal_ = false;
+            tracker_.clear();
+        } else if (!isCal_) {
+            //std::cerr << "calibrating..." << std::endl;
+            stats_.accumulate(frame);
+            if (stats_.getCount() >= kSoundplaneCalibrateSize) {
+                tracker_.clear();
+                SensorFrame mean = clamp(stats_.mean(), 0.0001f, 1.f);
+                calibrateMeanInv_ = divide(fill(1.f), mean);
+                //std::cerr << "calibration complete" << std::endl;
+                isCal_ = true;
+            }
+            for (auto cb : callbacks_) {
+                cb->onInit();
+            }
+        } else {
+            for (auto cb : callbacks_) {
+                cb->onFrame();
+            }
+            calibratedFrame_ = subtract(multiply(frame, calibrateMeanInv_), 1.0f);
+            SensorFrame curvature = tracker_.preprocess(calibratedFrame_);
+            TouchArray t = tracker_.process(curvature, maxTouches_);
+            onTouches(t);
+        }
+    }
+    return count;
+}
+
+void SPLiteImpl_::Listener::onStartup(void) {
+    if(parent_) parent_->onStartup();
+}
+void SPLiteImpl_::Listener::onFrame(const SensorFrame &frame) {
+    if(parent_) parent_->onFrame(frame);
+}
+void SPLiteImpl_::Listener::onError(int err, const char *errStr) {
+    if(parent_) parent_->onError(err,errStr);
+}
+
+void SPLiteImpl_::Listener::onClose(void) {
+    if(parent_) parent_->onClose();
+}
+
+
+void SPLiteImpl_::onTouches(TouchArray &ta) {
 //    dumpTouches(ta);
     for (unsigned idx = 0; idx < maxTouches_; idx++) {
         Touch &t = ta[idx];
@@ -227,7 +258,7 @@ void SPLiteImpl_::Listener::onTouches(TouchArray &ta) {
 }
 
 
-void SPLiteImpl_::Listener::dumpTouches(TouchArray &ta) {
+void SPLiteImpl_::dumpTouches(TouchArray &ta) {
     std::cout << std::fixed << std::setw(6) << std::setprecision(4);
     for (int i = 0; i < maxTouches_; ++i) {
         if (touchIsActive(ta[i])) {
@@ -239,10 +270,6 @@ void SPLiteImpl_::Listener::dumpTouches(TouchArray &ta) {
             std::cout << std::endl;
         }
     }
-}
-
-void SPLiteImpl_::Listener::addCallback(std::shared_ptr<SPLiteCallback> cb) {
-    callbacks_.push_back(cb);
 }
 
 //---------------------
@@ -269,4 +296,8 @@ void SPLiteDevice::addCallback(std::shared_ptr<SPLiteCallback> cb) {
 
 void SPLiteDevice::maxTouches(unsigned t) {
     impl_->maxTouches(t);
+}
+
+unsigned SPLiteDevice::process() {
+    return impl_->process();
 }

@@ -59,6 +59,7 @@ int main(int argc, const char * argv[]) {
     device.maxTouches(4);
 
     while(keepRunning) {
+        device.process();
         sleep(1);
     }
     device.stop();

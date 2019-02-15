@@ -4,7 +4,8 @@ project(splite)
 #set(SPLITE_FORCE_LIBUSB ON)
 
 include_directories(
-        "${PROJECT_SOURCE_DIR}/../../../external/libusb"
+        "${PROJECT_SOURCE_DIR}/../external/libusb"
+        "${PROJECT_SOURCE_DIR}/../external/moodycamel"
         #        "${PROJECT_SOURCE_DIR}/../../../external/portaudio"
         #        "${PROJECT_SOURCE_DIR}/../../../external/cJSON"
         #        "${PROJECT_SOURCE_DIR}/../../../external/oscpack"

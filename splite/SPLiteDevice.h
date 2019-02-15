@@ -24,6 +24,7 @@ public:
     virtual ~SPLiteDevice();
     void start();
     void stop();
+    unsigned process(); // call periodically
     void addCallback(std::shared_ptr<SPLiteCallback>);
     void maxTouches(unsigned);
 private:
