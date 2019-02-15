@@ -2,29 +2,81 @@
 
 #include <SPLiteDevice.h>
 
+#include <chrono>
 
 AuxiliaryTask gSPLiteProcessTask;
 
 
+std::chrono::time_point<std::chrono::system_clock>  gStartTime;
+std::chrono::time_point<std::chrono::system_clock>  gLastErrorTime;
+
+
 #include <iostream>
+
+struct SPTouch {
+	unsigned id_;
+	bool active_;
+	float x_,y_,z_;
+	float pitch_;
+} ;
+
+SPTouch lSlider_ 	{0,false,0.0f,0.0f,0.0f,0.0f};
+SPTouch lPanel_  	{0,false,0.0f,0.0f,0.0f,0.0f};
+SPTouch rPanel_ 	{0,false,0.0f,0.0f,0.0f,0.0f};
+SPTouch rSlider_ 	{0,false,0.0f,0.0f,0.0f,0.0f};
+
+
 
 class BelaSPCallback : public SPLiteCallback {
 public:
 	BelaSPCallback() {
-		;
+		gStartTime = std::chrono::system_clock::now();
 	}
-	
+    void onError(unsigned, const char* err) override {
+		gLastErrorTime = std::chrono::system_clock::now();
+		std::chrono::duration<double> diff = gLastErrorTime-gStartTime;
+		std::cerr << diff.count() << " secs " <<err << std::endl;
+    }
+    
    void touchOn(unsigned  tId, float x, float y, float z) override {
         // std::cout << " touchOn:" << tId << " x:" << x  << " y:" << y << " z:" << z << std::endl;
+        updateTouch(tId,x,y,z);
     }
 
     void touchContinue(unsigned tId, float x, float y, float z) override {
         // std::cout << " touchContinue:" << tId << " x:" << x  << " y:" << y << " z:" << z << std::endl;
+        updateTouch(tId,x,y,z);
+
     }
 
     void touchOff(unsigned tId, float x, float y, float z) override {
         // std::cout << " touchOff:" << tId << " x:" << x  << " y:" << y << " z:" << z << std::endl;
+        updateTouch(tId,x,y,0);
     }
+private:
+	static constexpr float semiMult = (5.0f / 60.0f); // 5v = 5 octaves , 60 semis
+	void updateTouch(unsigned  tId, float x, float y, float z) {
+        if(x < 2.0) {
+        	lSlider_.id_ = tId;
+        	lSlider_.y_ = y / 5.0f;
+        } else if(x < 12.0) {
+        	lPanel_.id_ = tId;
+        	lPanel_.x_ = (x - 2.0f)  / 10.0f ;
+        	lPanel_.y_ = y / 5.0f;
+        	lPanel_.z_ = z;
+        	lPanel_.pitch_ =  (x - 2.0f)  * semiMult;
+        } else if(x < 27.0) {
+        	rPanel_.id_ = tId;
+        	rPanel_.x_ = (x - 12.0f)  / 15.0f;
+        	rPanel_.y_ = y / 5.0f;
+        	rPanel_.z_ = z;
+        	rPanel_.pitch_ =  (x - 2.0f)  * semiMult;
+        } else {
+        	rSlider_.id_ = tId;
+        	rSlider_.y_ = y / 5.0f;
+        }
+	}
+
 };
 
 SPLiteDevice *gpDevice = nullptr;
@@ -61,6 +113,18 @@ void render(BelaContext *context, void *userData)
 		}
 	}
     // distribute touches to cv
+	for(unsigned int n = 0; n < context->analogFrames; n++) {
+		unsigned ch = 0;
+		if(ch < context->analogOutChannels) { analogWriteOnce(context, n, ch, lSlider_.y_); ch++; };// CV 1
+		if(ch < context->analogOutChannels) { analogWriteOnce(context, n, ch, lPanel_.pitch_ ); ch++; };// CV 2
+		if(ch < context->analogOutChannels) { analogWriteOnce(context, n, ch, lPanel_.y_ ); ch++; };// CV 3
+		if(ch < context->analogOutChannels) { analogWriteOnce(context, n, ch, lPanel_.z_ ); ch++; };// CV 4
+		if(ch < context->analogOutChannels) { analogWriteOnce(context, n, ch, rPanel_.pitch_ ); ch++; };// CV 5
+		if(ch < context->analogOutChannels) { analogWriteOnce(context, n, ch, rPanel_.y_ ); ch++; };// CV 6
+		if(ch < context->analogOutChannels) { analogWriteOnce(context, n, ch, rPanel_.z_ ); ch++; };// CV 7
+		if(ch < context->analogOutChannels) { analogWriteOnce(context, n, ch, rSlider_.y_); ch++; };// CV 8
+	}
+
 }
 
 void cleanup(BelaContext *context, void *userData)
