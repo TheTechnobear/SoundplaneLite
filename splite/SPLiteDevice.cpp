@@ -12,6 +12,7 @@
 
 
 const int kModelDefaultCarriersSize = 40;
+static const int kDefaultCarrierSet = 0;
 static const int kStandardCarrierSets = 16;
 static void makeStandardCarrierSet(SoundplaneDriver::Carriers &carriers, int set);
 
@@ -41,6 +42,11 @@ static void makeStandardCarrierSet(SoundplaneDriver::Carriers &carriers, int set
     for (int i = gapStart; i < kSoundplaneNumCarriers; ++i) {
         carriers[i] = kModelDefaultCarriers[i + gapSize];
     }
+    std::cerr << "makeStandardCarrierSet : " << set << std::endl;
+    for (int i = 0; i < kSoundplaneNumCarriers; ++i) {
+    	std::cerr << " " << (unsigned) carriers[i];
+    }
+    std::cerr << std::endl;
 }
 
 
@@ -124,7 +130,7 @@ void SPLiteImpl_::Listener::onFrame(const SensorFrame &frame) {
 
     if (state == kDeviceHasIsochSync) {
         if (!isCarrierSet_) {
-            makeStandardCarrierSet(carriers_, kStandardCarrierSets);
+            makeStandardCarrierSet(carriers_, kDefaultCarrierSet);
             parent_->driver_->setCarriers(carriers_);
             unsigned long carrierMask = 0xFFFFFFFF;
             parent_->driver_->enableCarriers(~carrierMask);
@@ -135,13 +141,15 @@ void SPLiteImpl_::Listener::onFrame(const SensorFrame &frame) {
             isCal_ = false;
             tracker_.clear();
         } else if (!isCal_) {
+	    //std::cerr << "calibrating..." << std::endl;
             stats_.accumulate(frame);
             if (stats_.getCount() >= kSoundplaneCalibrateSize) {
+            	tracker_.clear();
                 SensorFrame mean = clamp(stats_.mean(), 0.0001f, 1.f);
                 calibrateMeanInv_ = divide(fill(1.f), mean);
+		//std::cerr << "calibration complete" << std::endl;
                 isCal_ = true;
             }
-
             for (auto cb : callbacks_) {
                 cb->onInit();
             }
@@ -164,6 +172,7 @@ void SPLiteImpl_::Listener::onError(int err, const char *errStr) {
             errstr << "error: frame difference too large: " << errStr;
             stats_.clear();
             isCal_ = false;
+            tracker_.clear();
             break;
         case kDevGapInSequence:
             errstr << "note: gap in sequence " << errStr;

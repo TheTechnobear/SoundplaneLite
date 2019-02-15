@@ -1,5 +1,9 @@
 --wrap pthread_create
 --wrap pthread_join
+--wrap pthread_key_create
+--wrap pthread_getschedparam
+--wrap pthread_setschedparam
+--wrap sched_get_priority_max
 --wrap sem_init
 --wrap sem_destroy
 --wrap sem_post

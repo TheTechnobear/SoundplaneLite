@@ -434,7 +434,7 @@ void LibusbSoundplaneDriver::processThread() {
             [this](int frameCtr, float df, const SensorFrame &previousFrame, const SensorFrame &frame) {
 
                 snprintf(mErrorBuf, kMaxErrorStringSize, "frame(%d) ", frameCtr);
-                mListener.onError(kDevPayloadFailed, mErrorBuf);
+                mListener.onError(kDevDataDiffTooLarge, mErrorBuf);
             },
             [this](const SensorFrame &frame) {
                 mListener.onFrame(frame);

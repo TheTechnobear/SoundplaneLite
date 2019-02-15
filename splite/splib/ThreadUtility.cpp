@@ -160,8 +160,12 @@ void setThreadPriority(pthread_t inThread, uint32_t inPriority, bool inIsFixed)
     struct sched_param param;
 
     pthread_getschedparam(inThread, &policy, &param);
-    param.sched_priority = sched_get_priority_max(policy);
-    pthread_setschedparam(inThread, policy, &param);
+    //param.sched_priority = sched_get_priority_max(policy);
+    //pthread_setschedparam(inThread, policy, &param);
+    
+    //param.sched_priority = sched_get_priority_max(SCHED_FIFO);
+    param.sched_priority = inPriority;
+    pthread_setschedparam(inThread, SCHED_FIFO, &param);
 }
 
 void SetPriorityRealtimeAudio(pthread_t inThread) 
