@@ -10,7 +10,6 @@ AuxiliaryTask gSPLiteProcessTask;
 std::chrono::time_point<std::chrono::system_clock>  gStartTime;
 std::chrono::time_point<std::chrono::system_clock>  gLastErrorTime;
 
-
 #include <iostream>
 
 struct SPTouch {
@@ -82,6 +81,10 @@ private:
 SPLiteDevice *gpDevice = nullptr;
 auto gCallback = std::make_shared<BelaSPCallback>();
 
+void process_salt(void*) {
+	gpDevice->process();
+}
+
 bool setup(BelaContext *context, void *userData)
 {
 	gpDevice = new SPLiteDevice();
@@ -91,20 +94,21 @@ bool setup(BelaContext *context, void *userData)
 	
     // Initialise auxiliary tasks
 
-	// if((gSPLiteProcessTask = Bela_createAuxiliaryTask( xxxxxxx, BELA_AUDIO_PRIORITY - 1, "SPLiteProcessTask", gpDevice)) == 0)
-		// return false;
+	// if((gSPLiteProcessTask = Bela_createAuxiliaryTask( process_salt, 0, "SPLiteProcessTask", gpDevice)) == 0)
+	if((gSPLiteProcessTask = Bela_createAuxiliaryTask( process_salt, BELA_AUDIO_PRIORITY - 5, "SPLiteProcessTask", gpDevice)) == 0)
+		return false;
 
 	return true;
 }
+
+
+
 
 // render is called 2750 per second (44000/16)
 // const int decimation = 5;  // = 550/seconds
 long renderFrame = 0;
 void render(BelaContext *context, void *userData)
 {
-
-	// Bela_scheduleAuxiliaryTask(gSPLiteProcessTask);
-	
 	renderFrame++;
 	// silence audio buffer
 	for(unsigned int n = 0; n < context->audioFrames; n++) {
@@ -112,17 +116,21 @@ void render(BelaContext *context, void *userData)
 			audioWrite(context, n, channel, 0.0f);
 		}
 	}
-    // distribute touches to cv
-	for(unsigned int n = 0; n < context->analogFrames; n++) {
-		unsigned ch = 0;
-		if(ch < context->analogOutChannels) { analogWriteOnce(context, n, ch, lSlider_.y_); ch++; };// CV 1
-		if(ch < context->analogOutChannels) { analogWriteOnce(context, n, ch, lPanel_.pitch_ ); ch++; };// CV 2
-		if(ch < context->analogOutChannels) { analogWriteOnce(context, n, ch, lPanel_.y_ ); ch++; };// CV 3
-		if(ch < context->analogOutChannels) { analogWriteOnce(context, n, ch, lPanel_.z_ ); ch++; };// CV 4
-		if(ch < context->analogOutChannels) { analogWriteOnce(context, n, ch, rPanel_.pitch_ ); ch++; };// CV 5
-		if(ch < context->analogOutChannels) { analogWriteOnce(context, n, ch, rPanel_.y_ ); ch++; };// CV 6
-		if(ch < context->analogOutChannels) { analogWriteOnce(context, n, ch, rPanel_.z_ ); ch++; };// CV 7
-		if(ch < context->analogOutChannels) { analogWriteOnce(context, n, ch, rSlider_.y_); ch++; };// CV 8
+	
+	if(renderFrame % 5 == 0) {
+	    // distribute touches to cv
+		for(unsigned int n = 0; n < context->analogFrames; n++) {
+			unsigned ch = 0;
+			if(ch < context->analogOutChannels) { analogWrite(context, n, ch, lSlider_.y_); ch++; };// CV 1
+			if(ch < context->analogOutChannels) { analogWrite(context, n, ch, lPanel_.pitch_ ); ch++; };// CV 2
+			if(ch < context->analogOutChannels) { analogWrite(context, n, ch, lPanel_.y_ ); ch++; };// CV 3
+			if(ch < context->analogOutChannels) { analogWrite(context, n, ch, lPanel_.z_ ); ch++; };// CV 4
+			if(ch < context->analogOutChannels) { analogWrite(context, n, ch, rPanel_.pitch_ ); ch++; };// CV 5
+			if(ch < context->analogOutChannels) { analogWrite(context, n, ch, rPanel_.y_ ); ch++; };// CV 6
+			if(ch < context->analogOutChannels) { analogWrite(context, n, ch, rPanel_.z_ ); ch++; };// CV 7
+			if(ch < context->analogOutChannels) { analogWrite(context, n, ch, rSlider_.y_); ch++; };// CV 8
+		}
+		Bela_scheduleAuxiliaryTask(gSPLiteProcessTask);
 	}
 
 }

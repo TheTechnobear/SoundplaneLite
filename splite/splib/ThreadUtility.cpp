@@ -170,6 +170,6 @@ void setThreadPriority(pthread_t inThread, uint32_t inPriority, bool inIsFixed)
 
 void SetPriorityRealtimeAudio(pthread_t inThread) 
 {
-	setThreadPriority(inThread, 99, false);
+	setThreadPriority(inThread, 95, false);
 }
 #endif
