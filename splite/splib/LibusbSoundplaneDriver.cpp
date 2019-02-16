@@ -30,6 +30,10 @@ public:
 
     void operator()(const SensorFrame &frame) {
         if (mStarted) {
+#ifdef DISABLE_PACKET_CHECK
+#pragma message("PACKET CHECK DISABLED")
+                mSuccessCallback(frame);
+#else
             float df = frameDiff(mPreviousFrame, frame);
             if (df < kMaxFrameDiff) {
                 // We are OK, the data gets out normally
@@ -39,6 +43,7 @@ public:
                 mGlitchCallback(mFrameCtr, df, mPreviousFrame, frame);
                 reset();
             }
+#endif
         } else if (mFrameCtr > kSoundplaneStartupFrames) {
             mStarted = true;
             mSuccessCallback(frame);

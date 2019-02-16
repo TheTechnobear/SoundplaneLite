@@ -25,6 +25,7 @@ SPTouch rPanel_ 	{0,false,0.0f,0.0f,0.0f,0.0f};
 SPTouch rSlider_ 	{0,false,0.0f,0.0f,0.0f,0.0f};
 
 #ifdef SALT
+	#pragma message("with added SALT")
 	#define OUT_VOLT_RANGE 10.0f
 	#define OUT_OFFSET 0.5f
 #else 

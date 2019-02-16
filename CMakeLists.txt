@@ -23,6 +23,9 @@ set(CMAKE_CXX_STANDARD 11)
 
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -ffast-math -funroll-loops -fomit-frame-pointer")
 
+if (SALT) 
+  set(BELA on)
+endif (SALT)
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "Processor: ${CMAKE_SYSTEM_PROCESSOR}")
@@ -33,9 +36,14 @@ if (NOT DEFINED CPU_OPTIMIZATION_FLAGS)
             if (BELA)
                 message(STATUS "BELA optimized")
             # /usr/xenomai/bin/xeno-config --skin=cobalt --no-mode-check --cflags
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I/usr/xenomai/include/cobalt -I/usr/xenomai/include -march=armv7-a -mfpu=vfp3 -D_GNU_SOURCE -D_REENTRANT -D__COBALT__")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I/usr/xenomai/include/cobalt -I/usr/xenomai/include -march=armv7-a -D_GNU_SOURCE -D_REENTRANT -D__COBALT__")
             set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wl,@${PROJECT_SOURCE_DIR}/xenomai.wrappers")
-                set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=armv7-a -mtune=cortex-a8 -mfloat-abi=hard -mfpu=neon -ftree-vectorize --fast-math")
+	    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsingle-precision-constant -march=armv7-a -mtune=cortex-a8 -mfloat-abi=hard -mfpu=neon -ftree-vectorize --fast-math")
+	    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDISABLE_PACKET_CHECK")
+	    if(SALT) 
+		    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSALT")
+    	    endif(SALT) 
+	    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBELA -DDISABLE_PACKET_CHECK")
             #  /usr/xenomai/bin/xeno-config --skin=cobalt --no-auto-init --no-mode-check --ldflags
             set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--no-as-needed -L/usr/xenomai/lib -lcobalt -lmodechk -lpthread -lrt ")
             set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--no-as-needed -L/usr/xenomai/lib -lcobalt -lmodechk -lpthread -lrt ")

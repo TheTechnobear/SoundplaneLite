@@ -16,7 +16,7 @@ libusb
     sudo apt-get install libusb-1.0-0-dev
     mkdir build
     cd build
-    cmake .. 
+    cmake -DCMAKE_BUILD_TYPE=Release ..
 
 
 # Building Mac (with xcode)
@@ -55,7 +55,7 @@ the bela web ui does not support a subdirectories, so the way install is
     apt-get install libusb-1.0-0-dev
     mkdir build
     cd build
-    cmake .. 
+    cmake -DCMAKE_BUILD_TYPE=Release -DBELA=on ..
     cd ~/Bela/projects
     ln ~/projects/SoundplaneLite
 

@@ -34,14 +34,14 @@ set(SPL_SRC
 find_library(LIBUSB_LIB NAME libusb)
 
 if (APPLE AND NOT SPLITE_FORCE_LIBUSB)
-    message("using macOS USB")
+    message("-- using macOS USB")
     list(APPEND SPL_SRC
             splib/MacSoundplaneDriver.cpp
             splib/MacSoundplaneDriver.h
             )
 else ()
 #elseif (UNIX)
-    message("using LIBUSB")
+    message("-- using LIBUSB")
     list(APPEND SPL_SRC
             splib/LibusbSoundplaneDriver.cpp
             splib/LibusbSoundplaneDriver.h
