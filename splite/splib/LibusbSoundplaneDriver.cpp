@@ -30,10 +30,6 @@ public:
 
     void operator()(const SensorFrame &frame) {
         if (mStarted) {
-#ifdef DISABLE_PACKET_CHECK
-#pragma message("PACKET CHECK DISABLED")
-                mSuccessCallback(frame);
-#else
             float df = frameDiff(mPreviousFrame, frame);
             if (df < kMaxFrameDiff) {
                 // We are OK, the data gets out normally
@@ -43,7 +39,6 @@ public:
                 mGlitchCallback(mFrameCtr, df, mPreviousFrame, frame);
                 reset();
             }
-#endif
         } else if (mFrameCtr > kSoundplaneStartupFrames) {
             mStarted = true;
             mSuccessCallback(frame);
@@ -381,10 +376,21 @@ void LibusbSoundplaneDriver::processThreadTransferCallback(Transfer &transfer) {
         processThreadSetDeviceState(kDeviceHasIsochSync);
     }
 
-    transfer.unpacker->gotTransfer(
-        transfer.endpointId,
-        transfer.packets,
-        transfer.transfer->num_iso_packets);
+    bool isShort=false;
+    unsigned numPkt = transfer.transfer->num_iso_packets;
+    for(unsigned i = 0; !isShort && i <(transfer.transfer->num_iso_packets);i++ ) {
+        isShort=(transfer.transfer->iso_packet_desc[i].actual_length)==0;
+        if(isShort) {
+          numPkt = i;
+        }
+    }
+
+    if(numPkt>0) {
+            transfer.unpacker->gotTransfer(
+            transfer.endpointId,
+            transfer.packets,
+            numPkt);
+    }
 
     // Schedule another transfer
     Transfer &nextTransfer = *transfer.nextTransfer;

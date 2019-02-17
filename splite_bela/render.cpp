@@ -68,13 +68,13 @@ private:
         	lPanel_.id_ = tId;
         	lPanel_.x_ = (x - 2.0f)  / 10.0f ;
         	lPanel_.y_ = y / 5.0f;
-        	lPanel_.z_ = (z / 2.0) + OUT_OFFSET;
+        	lPanel_.z_ = ((z / 2.0) *2.0f)  + OUT_OFFSET;
         	lPanel_.pitch_ =  ((x - 2.0f)  * semiMult) + OUT_OFFSET;
         } else if(x < 28.0f) {
         	rPanel_.id_ = tId;
         	rPanel_.x_ = (x - 12.0f)  / 16.0f;
         	rPanel_.y_ = y / 5.0f;
-        	rPanel_.z_ = (z / 2.0) + OUT_OFFSET;
+        	rPanel_.z_ = ((z / 2.0) * 2.0f) + OUT_OFFSET;
         	rPanel_.pitch_ =  ((x - 12.0f)  * semiMult) + OUT_OFFSET;
         } else {
         	rSlider_.id_ = tId;
