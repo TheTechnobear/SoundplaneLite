@@ -5,6 +5,7 @@ profile
 **/build/*
 build
 splite_bela/splite_bela
+splite_salt/splite_salt
 
 **/*.sublime-workspace
 cmake-build*/
