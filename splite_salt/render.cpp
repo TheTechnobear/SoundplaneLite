@@ -5,11 +5,17 @@
 #include <chrono>
 #include <math.h>
 
+// #include <Scope.h>
+// Scope scope;
+
+
 AuxiliaryTask gSPLiteProcessTask;
 
 
 std::chrono::time_point<std::chrono::system_clock>  gStartTime;
 std::chrono::time_point<std::chrono::system_clock>  gLastErrorTime;
+
+
 
 #include <iostream>
 
@@ -114,11 +120,12 @@ private:
 	static constexpr unsigned MAX_DIGITAL_OUT=4;
 	static constexpr unsigned MAX_ANALOG_OUT=8;
 	static constexpr unsigned MAX_ANALOG_IN=8;
-	bool digitalOut_[MAX_DIGITAL_OUT];
-	unsigned digitalOutPin_[MAX_DIGITAL_OUT];
-	float analogOut_[MAX_ANALOG_OUT];
-	float analogIn_[MAX_ANALOG_IN];
-	float audioOut_[MAX_AUDIO_OUT];
+	
+	bool 		digitalOut_[MAX_DIGITAL_OUT];
+	unsigned 	digitalOutPin_[MAX_DIGITAL_OUT];
+	float 		analogOut_[MAX_ANALOG_OUT];
+	float 		analogIn_[MAX_ANALOG_IN];
+	float 		audioOut_[MAX_AUDIO_OUT];
 };
 
 static BelaIO belaio_;
@@ -211,30 +218,29 @@ protected:
     // increasing makes slower, more subtle light touches
 	static constexpr float PRESSURE_CURVE=0.5f;
 
-	float pressure(float z) {
-		return ((powf(z, PRESSURE_CURVE) * ( 1.0f-ZERO_OFFSET))  * zMult_ ) + ZERO_OFFSET;	
+	float audioAmp(float z, float mult ) {
+		return powf(z, PRESSURE_CURVE) * mult;
+	}
+
+	float pressure(float z, float mult ) {
+		return ( (powf(z, PRESSURE_CURVE) * mult * ( 1.0f-ZERO_OFFSET) ) ) + ZERO_OFFSET;	
 	}
 	
-	float timbre(float y) {
-		return (y / numRows_) * yMult_;	
+	float timbre(float y, float mult) {
+		return ( (y * mult)  * ( 1.0f-ZERO_OFFSET) )   + ZERO_OFFSET ;	
 	}
 	float partialX(float x, float startX, float endX) {
 		return  (x - startX ) / (endX - startX);
 	}
 
 	
-	float transpose (int cSemiPos) {
-		return ( ((START_OCTAVE + octaveTranspose_) * 12 ) + cSemiPos) *  semiMult_;
+	float transpose (float pitch, int octave, int semi) {
+		return pitch + (((( START_OCTAVE + octave) * 12 ) + semi) *  semiMult_ );
 	}
 
 
 	unsigned quantMode_;
 	SPTouch lastTouch_ [MAX_TOUCH];
-	int octaveTranspose_ = 0;
-	int semiTranspose_ = -3 ; // SP starts on A, in full layout
-	float numRows_ = 5.0f;
-	float yMult_ = 1.0f;
-	float zMult_ = 1.0f;
 
 #ifdef SALT
 	static constexpr float 	OUT_VOLT_RANGE=10.0f;
@@ -243,14 +249,9 @@ protected:
 #else 
 	static constexpr float 	OUT_VOLT_RANGE=5.0f;
 	static constexpr float 	ZERO_OFFSET=0;
-	static constexpr int 	START_OCTAVE=1f;
+	static constexpr int 	START_OCTAVE=1.0f;
 #endif 
 	static constexpr float semiMult_ = (1.0f / (OUT_VOLT_RANGE * 12.0f)); // 1.0 = 10v = 10 octaves 
-
-	static constexpr float 	Y_MULT 		= 4.0f;
-	static constexpr float 	Y_OFFSET 	= 1.0f;
-	static constexpr float 	Z_MULT 		= 4.0f;
-	static constexpr float 	Z_OFFSET 	= 1.0f;
 };
 
 void SPLayout::processTouch(SPTouch& t)  {
@@ -258,8 +259,6 @@ void SPLayout::processTouch(SPTouch& t)  {
 
 	SPTouch& lT = lastTouch_[t.tId_];
 	if(t.active_) {
-		octaveTranspose_ = (belaio_.analogIn(0) - 0.5) * 6  ;
-
 		if(!lT.active_) {
 			// new touch
 			if(quantMode_!=QuantMode::NONE) {
@@ -321,35 +320,38 @@ void SPLayout::processTouch(SPTouch& t)  {
 class ZoneLayout_1 : public SPLayout {
 public:
 	void touch(SPTouch& t) override{
-		yMult_ = (belaio_.analogIn(1) * Y_MULT) - Y_OFFSET;
-		zMult_ = (belaio_.analogIn(2) * Z_MULT) - Z_OFFSET;
 		t.zone_=0;
 		t.pitch_= t.x_ ;
-		t.x_=t.x_;
-	    t.y_=timbre(t.y_);
-	    t.z_=pressure(t.z_);
+		// t.x_=t.x_;
+	    t.y_=(t.y_ - 2.5f) / 2.5f; // -1...1
+	    // t.z_=t.z_;
 		processTouch(t);
 	}
 	
 	void output(const SPTouch& t) override {
     	// pitch, y, z, x 
+		float pitch = transpose(t.pitch_, int((belaio_.analogIn(0) - 0.5) * 6) ,-3);
+		float y = timbre(t.y_,belaio_.analogIn(1) * 2);
+		float z = pressure(t.z_,belaio_.analogIn(2) * 2);
+		float amp = audioAmp(t.z_,belaio_.analogIn(2) * 2);
+
         belaio_.digitalOut(0, t.active_);
-        belaio_.analogOut(0, t.pitch_ + transpose(-3)); // C=3
-        belaio_.analogOut(1, t.y_);
-        belaio_.analogOut(2, t.z_);
+        
+        belaio_.analogOut(0, pitch); // C=3
+        belaio_.analogOut(1, y);
+        belaio_.analogOut(2, z);
         belaio_.analogOut(3, t.x_);
-        belaio_.audioOut(0, t.z_);
-        belaio_.audioOut(1, t.z_);
+        
+        belaio_.audioOut(0, amp);
+        belaio_.audioOut(1, amp);
 	}
 };
 
 class ZoneLayout_2 : public SPLayout {
 public:
 	void touch(SPTouch& t) override{
-		yMult_ = (belaio_.analogIn(1) * Y_MULT) - Y_OFFSET;
-		zMult_ = (belaio_.analogIn(2) * Z_MULT) - Z_OFFSET;
-	    t.y_=timbre(t.y_);
-	    t.z_=pressure(t.z_);
+	    t.y_=(t.y_ - 2.5f) / 2.5f; // -1...1
+	    // t.z_=t.z_;
         if(t.x_ < zone1_) {
 			t.zone_=0;
 			t.pitch_= t.x_;
@@ -364,24 +366,39 @@ public:
 	}
 	
 	void output(const SPTouch& t) override {
+
 		switch(t.zone_) {
 	        case 0 : {
 	        	// pitch, y, z, x
+				float pitch = transpose(t.pitch_, int((belaio_.analogIn(0) - 0.5) * 6) ,-3);
+				float y = timbre(t.y_,belaio_.analogIn(1) * 2);
+				float z = pressure(t.z_,belaio_.analogIn(2) * 2);
+				float amp = audioAmp(t.z_,belaio_.analogIn(2) * 2);
+
                 belaio_.digitalOut(0, t.active_);
-                belaio_.analogOut(0, t.pitch_ + transpose(-3));
-                belaio_.analogOut(1, t.y_);
-                belaio_.analogOut(2, t.z_);
+                
+                belaio_.analogOut(0, pitch);
+                belaio_.analogOut(1, y);
+                belaio_.analogOut(2, z);
                 belaio_.analogOut(3, t.x_);
-		        belaio_.audioOut(0, t.z_);
+                
+		        belaio_.audioOut(0, amp);
 	      		break;
 	        }; 
 	        default : {
+				float pitch = transpose(t.pitch_, int((belaio_.analogIn(4) - 0.5) * 6) ,-3);
+				float y = timbre(t.y_,belaio_.analogIn(5) * 2);
+				float z = pressure(t.z_,belaio_.analogIn(6) * 2);
+				float amp = audioAmp(t.z_,belaio_.analogIn(6) * 2);
+
                 belaio_.digitalOut(2, t.active_);
-                belaio_.analogOut(4, t.pitch_ + transpose(-3));
-                belaio_.analogOut(5, t.y_);
-                belaio_.analogOut(6, t.z_);
+                
+                belaio_.analogOut(4, pitch);
+                belaio_.analogOut(5, y);
+                belaio_.analogOut(6, z);
                 belaio_.analogOut(7, t.x_);
-		        belaio_.audioOut(1, t.z_);
+                
+		        belaio_.audioOut(1, amp);
 	        }
 		}
 	}
@@ -393,10 +410,8 @@ public:
 class ZoneLayout_4 : public SPLayout {
 public:
 	void touch(SPTouch& t) override {
-		yMult_ = (belaio_.analogIn(1) * Y_MULT) - Y_OFFSET;
-		zMult_ = (belaio_.analogIn(2) * Z_MULT) - Z_OFFSET;
-	    t.y_=timbre(t.y_);
-	    t.z_=pressure(t.z_);
+	    t.y_=(t.y_ - 2.5f) / 2.5f; // -1...1
+	    // t.z_=t.z_;
         if(t.x_ < zone1_) {
 			t.zone_=0;
 			checkAndReleaseOldTouch(t);
@@ -423,30 +438,48 @@ public:
 	void output(const SPTouch& t) override {
 		switch(t.zone_) {
 			case 0 : {
+				float y = timbre(t.y_,belaio_.analogIn(3) * 2);
+				
                 belaio_.digitalOut(1, t.active_);
-                belaio_.analogOut(3, t.y_);
+                belaio_.analogOut(3, y);
 				break;	
 			}
 			case 1 : {
+				float pitch = transpose(t.pitch_, int((belaio_.analogIn(0) - 0.5) * 6) ,-1);
+				float y = timbre(t.y_,belaio_.analogIn(1) * 2);
+				float z = pressure(t.z_,belaio_.analogIn(2) * 2);
+				float amp = audioAmp(t.z_,belaio_.analogIn(2) * 2);
+
                 belaio_.digitalOut(0, t.active_);
-                belaio_.analogOut(0, t.pitch_ + transpose(-1));
-                belaio_.analogOut(1, t.y_);
-                belaio_.analogOut(2, t.z_);
-		        belaio_.audioOut(0, t.z_);
+                
+                belaio_.analogOut(0, pitch);
+                belaio_.analogOut(1, y);
+                belaio_.analogOut(2, z);
+                
+		        belaio_.audioOut(0, amp);
 				break;	
 			}
 			case 2 : {
+				float pitch = transpose(t.pitch_, int((belaio_.analogIn(4) - 0.5) * 6) ,-3);
+				float y = timbre(t.y_,belaio_.analogIn(5) * 2);
+				float z = pressure(t.z_,belaio_.analogIn(6) * 2);
+				float amp = audioAmp(t.z_,belaio_.analogIn(6) * 2);
+
                 belaio_.digitalOut(2, t.active_);
-                belaio_.analogOut(4, t.pitch_ + transpose(-3));
-                belaio_.analogOut(5, t.y_);
-                belaio_.analogOut(6, t.z_);
-		        belaio_.audioOut(1, t.z_);
+                
+                belaio_.analogOut(4, pitch);
+                belaio_.analogOut(5, y);
+                belaio_.analogOut(6, z);
+                
+		        belaio_.audioOut(1, amp);
 				break;	
 			}
 			default:
 			case 3 : {
+				float y = timbre(t.y_,belaio_.analogIn(7) * 2);
+
                 belaio_.digitalOut(3, t.active_);
-                belaio_.analogOut(7, t.y_);
+                belaio_.analogOut(7, y);
 				break;	
 			}
 		}
@@ -460,15 +493,13 @@ public:
 class ZoneLayout_1Fourths : public ZoneLayout_1 {
 public:
 	void touch(SPTouch& t) override{
-		yMult_ = (belaio_.analogIn(1) * Y_MULT) - Y_OFFSET;
-		zMult_ = (belaio_.analogIn(2) * Z_MULT) - Z_OFFSET;
 		t.zone_=0;
+		// t.x_=t.x_;
 		int row = t.y_;
-		
+	    t.y_= ((t.y_ - row) * 2.0f) - 1.0f;
+	    // t.z_=t.z_;
+
 		t.pitch_= t.x_ + (row * 5.0f) ;
-		t.x_=t.x_;
-	    t.y_=(t.y_ - row) * yMult_;
-	    t.z_=pressure(t.z_);
 		processTouch(t);
 	}
 };
@@ -476,12 +507,10 @@ public:
 class ZoneLayout_2Fourths : public ZoneLayout_2 {
 public:
 	void touch(SPTouch& t) override{
-		yMult_ = (belaio_.analogIn(1) * Y_MULT) - Y_OFFSET;
-		zMult_ = (belaio_.analogIn(2) * Z_MULT) - Z_OFFSET;
-
 		int row = t.y_;
-	    t.y_=(t.y_ - row) * yMult_;
-	    t.z_=pressure(t.z_);
+	    t.y_= ((t.y_ - row) * 2.0f) - 1.0f;
+	    // t.z_=t.z_;
+	    
         if(t.x_ < zone1_) {
 			t.zone_=0;
 			t.pitch_= t.x_ + (row * 5.0f);
@@ -516,6 +545,7 @@ public:
     }
     
    void touchOn(unsigned  tId, float x, float y, float z) override {
+        // std::cout << " touchOn:" << tId << " x:" << x  << " y:" << y << " z:" << z << std::endl;
         updateOutput(tId,true,x,y,z);
     }
 
@@ -567,6 +597,8 @@ void process_salt(void*) {
 
 bool setup(BelaContext *context, void *userData)
 {
+	// scope.setup(2, context->audioSampleRate);
+	
 	pinMode(context,0,trigIn1,INPUT);
 	pinMode(context,0,trigIn2,INPUT);
 	pinMode(context,0,trigIn3,INPUT);
@@ -679,13 +711,17 @@ void render(BelaContext *context, void *userData)
 		}
 	}
 
+	float scopeOut[2];
 	for(unsigned int channel = 0; channel < context->audioOutChannels; channel++) {
 		float amp = belaio_.audioOut(channel);
+
 		for(unsigned int n = 0; n < context->audioFrames; n++) {
 			float v = audioRead(context, n, channel) * amp;
 			audioWrite(context, n, channel, v);
+			scopeOut[channel]=v;
 		}
 	}
+	// scope.log(scopeOut[0],scopeOut[1]);
 }
 
 void cleanup(BelaContext *context, void *userData)
