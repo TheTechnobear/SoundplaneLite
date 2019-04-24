@@ -2,6 +2,7 @@
 #pragma once
 
 #include "splayout.h"
+#include <math_neon.h>
 
 class ZoneLayout_4XY : public SPLayout {
 public:
@@ -84,73 +85,85 @@ public:
 	}
 
 	void renderTouch(BelaContext *context,const SPTouch& t) {
-		switch(t.zone_) {
-			case 0 : {
-				float x = scaleX(t.x_,analogRead(context, 0, 2)* 2);
-				float y = scaleY(t.y_,analogRead(context, 0, 3)* 2);
-				
-				float ampX = audioAmp((t.x_ + 1.0) / 2.0f, analogRead(context, 0, 2) * 2);
-				float ampY = audioAmp((t.y_ + 1.0) / 2.0f, analogRead(context, 0, 3) * 2);
+		if(t.zone_ < 3) {
+			unsigned xInOut = 2 + (t.zone_ * 2);
+			unsigned yInOut = 3 + (t.zone_ * 2);
+			float xCvIn = analogRead(context, 0, xInOut);
+			float yCvIn = analogRead(context, 0, yInOut);
+			
+			float x = 0.0f;
+			float y = 0.0f;
+			float ampX = 0.0f;
+			float ampY = 0.0f;
+			switch (customMode_) {
+				case 0: { // scaling 
+					x = constrain(scaleX(t.x_,xCvIn * 2),0, 1);
+					y = constrain(scaleY(t.y_,yCvIn * 2),0, 1);
+					if(t.zone_==0) {
+						ampX = constrain(audioAmp((t.x_ + 1.0) / 2.0f, xCvIn * 2),0, 1);
+						ampY = constrain(audioAmp((t.y_ + 1.0) / 2.0f, xCvIn * 2),0, 1);
+					}
+					break;
+				}
+				case 1: { // offset 
+					x = constrain(offsetX(t.x_, (xCvIn * 2.0f) - 1.0f), 0, 1);
+					y = constrain(offsetY(t.y_, (yCvIn * 2.0f) - 1.0f), 0, 1);
+ 					if(t.zone_==0) {
+						ampX = constrain(audioAmp((t.x_ + 1.0) / 2.0f, x),0, 1);
+						ampY = constrain(audioAmp((t.y_ + 1.0) / 2.0f, y),0, 1);
+					}
+					break;
+				}
+				default:
+				case 2: {
+					// this assume a unipolar input for angle!
+					float angle= ((xCvIn -0.5f)* 2.0f)  * float(M_PI) * 2.0f;
+                    float x1 = sinf_neon(angle) * yCvIn;
+                    float y1 = cosf_neon(angle) * yCvIn;
+					x = constrain(offsetX(t.x_, x1), 0, 1);
+					y = constrain(offsetY(t.y_, y1), 0, 1);
+ 					if(t.zone_==0) {
+						ampX = constrain(audioAmp((t.x_ + 1.0) / 2.0f, x), 0, 1);
+						ampY = constrain(audioAmp((t.y_ + 1.0) / 2.0f, y), 0, 1);
+					}
+					break;
+				}
+			}
+			
 
-				for(unsigned int n = 0; n < context->digitalFrames; n++) {
-					digitalWriteOnce(context, n,trigOut2 ,t.active_);	
-				}
-				for(unsigned int n = 0; n < context->analogFrames; n++) {
-					analogWriteOnce(context, n, 2,x);
-					analogWriteOnce(context, n, 3,y);
-				}
-		
+			unsigned trigPin = t.zone_ == 0 ? trigOut2 : ( t.zone_==1 ? trigOut3 : trigOut4);
+
+			for(unsigned int n = 0; n < context->digitalFrames; n++) {
+				digitalWriteOnce(context, n,trigPin ,t.active_);	
+			}
+			for(unsigned int n = 0; n < context->analogFrames; n++) {
+				analogWriteOnce(context, n, xInOut,x);
+				analogWriteOnce(context, n, yInOut,y);
+			}
+
+			if(t.zone_==0) {	
 				for(unsigned int n = 0; n < context->audioFrames; n++) {
 					float v0 = audioRead(context, n, 0) * ampX;
 					audioWrite(context, n, 0, v0);
 					float v1 = audioRead(context, n, 1) * ampY;
 					audioWrite(context, n, 1, v1);
 				}
-				break;	
 			}
-			case 1 : {
-				float x = scaleX(t.x_,analogRead(context, 0, 4)* 2);
-				float y = scaleY(t.y_,analogRead(context, 0, 5)* 2);
-				for(unsigned int n = 0; n < context->digitalFrames; n++) {
-					digitalWriteOnce(context, n,trigOut3 ,t.active_);	
-				}
-				for(unsigned int n = 0; n < context->analogFrames; n++) {
-					analogWriteOnce(context, n, 4,x);
-					analogWriteOnce(context, n, 5,y);
-				}
-				break;	
+		} else {
+			float pitch = t.x_;
+			if(pitchMode()!=PitchMode::NONE) {
+				pitch = transpose(t.pitch_, int((analogRead(context, 0, 0) - 0.5) * 6) ,0);
 			}
-			case 2 : {
-				float x = scaleX(t.x_,analogRead(context, 0, 6)* 2);
-				float y = scaleY(t.y_,analogRead(context, 0, 7)* 2);
-				for(unsigned int n = 0; n < context->digitalFrames; n++) {
-					digitalWriteOnce(context, n,trigOut4 ,t.active_);	
-				}
-				for(unsigned int n = 0; n < context->analogFrames; n++) {
-					analogWriteOnce(context, n, 6,x);
-					analogWriteOnce(context, n, 7,y);
-				}
-				break;	
-			}
-			case 3 : {
-				float pitch = t.x_;
-				if(pitchMode()!=PitchMode::NONE) {
-					pitch = transpose(t.pitch_, int((analogRead(context, 0, 0) - 0.5) * 6) ,0);
-				}
-				float y = scaleY(t.y_,analogRead(context, 0, 1)* 2);
+			float y = scaleY(t.y_,analogRead(context, 0, 1)* 2);
 
-				for(unsigned int n = 0; n < context->digitalFrames; n++) {
-					digitalWriteOnce(context, n,trigOut1 ,t.active_);	
-				}
-		
-				for(unsigned int n = 0; n < context->analogFrames; n++) {
-					analogWriteOnce(context, n, 0 ,pitch);
-					analogWriteOnce(context, n, 1 ,y);
-				}
-				break;	
+			for(unsigned int n = 0; n < context->digitalFrames; n++) {
+				digitalWriteOnce(context, n,trigOut1 ,t.active_);	
 			}
-			default:
-				break;
+	
+			for(unsigned int n = 0; n < context->analogFrames; n++) {
+				analogWriteOnce(context, n, 0 ,pitch);
+				analogWriteOnce(context, n, 1 ,y);
+			}
 		}
 	}
 	

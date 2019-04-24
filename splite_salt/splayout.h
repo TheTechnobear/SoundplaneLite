@@ -24,7 +24,11 @@ struct PitchMode {
 
 class SPLayout {
 public:
-	SPLayout() : quantMode_(QuantMode::NONE) { ; }
+	SPLayout() : 
+		quantMode_(QuantMode::NONE), 
+		pitchMode_(PitchMode::SINGLE),
+		customMode_(0)
+		{ ; }
 	
 	virtual void touch(SPTouch& touch) = 0;
 	virtual void render(BelaContext *context) = 0;
@@ -36,6 +40,8 @@ public:
     void pitchMode(unsigned v) { pitchMode_ = v;}
     unsigned pitchMode() { return pitchMode_;}
 
+	unsigned customMode() { return customMode_;}
+    void customMode(unsigned v) { customMode_ = v;}
 protected:
 	unsigned calcSignature(unsigned keyz, unsigned modz) {
 		return (modz << 2) + keyz;
@@ -84,6 +90,13 @@ protected:
 	}
 
 	
+	float offsetY(float y, float offset) {
+		return ( (y + offset) * ( 1.0f-ZERO_OFFSET) )  + ZERO_OFFSET ;	
+	}
+
+	float offsetX(float x, float offset) {
+		return ( (x + offset) * ( 1.0f-ZERO_OFFSET) )  + ZERO_OFFSET ;	
+	}
 
 
 	float partialX(float x, float startX, float endX) {
@@ -98,6 +111,7 @@ protected:
 
 	unsigned quantMode_;
 	unsigned pitchMode_;
+	unsigned customMode_;
 	SPTouch lastTouch_ [MAX_TOUCH];
 
 #ifdef SALT

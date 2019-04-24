@@ -6,8 +6,8 @@
 #include <math.h>
 #include <iostream>
 
-// #include <Scope.h>
-// Scope scope;
+#include <Scope.h>
+Scope scope;
 
 #include "defs.h"
 #include "sptouch.h"
@@ -75,7 +75,6 @@ public:
 
     void switchLayout(unsigned idx) {
     	if(idx< layouts_.size()) layoutIdx_ = idx;
-    	// TODO clear values?
     }
     
     void nextLayout() {
@@ -95,6 +94,17 @@ public:
     	pitchMode_ = ++pitchMode_ % 3;
 		layouts_[layoutIdx_]->pitchMode(pitchMode_);
     }
+
+    unsigned customMode() {
+		return layouts_[layoutIdx_]->customMode();
+    }
+    
+    void nextCustomMode() {
+    	unsigned current = layouts_[layoutIdx_]->customMode();
+    	current = ++current % 3;
+		layouts_[layoutIdx_]->customMode(current);
+    }
+
 
 private:
 	void updateOutput(unsigned  tId, bool active,float x, float y, float z) {
@@ -118,7 +128,7 @@ void process_salt(void*) {
 
 bool setup(BelaContext *context, void *userData)
 {
-	// scope.setup(2, context->audioSampleRate);
+	scope.setup(2, context->audioSampleRate);
 	
 	pinMode(context,0,trigIn1,INPUT);
 	pinMode(context,0,trigIn2,INPUT);
@@ -193,13 +203,15 @@ void render(BelaContext *context, void *userData)
 		}
 	}
 
+	if(tr2  && !ltr2)  { gCallback->nextCustomMode(); }
 	if(tr3  && !ltr3)  { gCallback->nextPitchMode(); }
 	if(tr4  && !ltr4)  { gCallback->nextQuantMode(); }
 
 
 	if(led_mode==0) {
-		setLed(context, ledOut3, gCallback->quantMode() %3);
-		setLed(context, ledOut4, gCallback->pitchMode() %3);
+		setLed(context, ledOut2, gCallback->customMode() %3);
+		setLed(context, ledOut3, gCallback->pitchMode() %3);
+		setLed(context, ledOut4, gCallback->quantMode() %3);
 	}
 
 	lsw =  sw;
