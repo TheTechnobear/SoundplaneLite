@@ -20,20 +20,27 @@ struct PitchMode {
 	};
 };
 
+
+
 class SPLayout {
 public:
 	SPLayout() : quantMode_(QuantMode::NONE) { ; }
 	
-	// called with touch
 	virtual void touch(SPTouch& touch) = 0;
 	virtual void render(BelaContext *context) = 0;
 	virtual void output(const SPTouch& touch) = 0;
+	virtual unsigned signature() = 0;
+
 
     void quantMode(unsigned v) { quantMode_ = v;}
     void pitchMode(unsigned v) { pitchMode_ = v;}
     unsigned pitchMode() { return pitchMode_;}
 
 protected:
+	unsigned calcSignature(unsigned keyz, unsigned modz) {
+		return (modz << 2) + keyz;
+	}
+	
 	virtual bool processTouch(SPTouch& touch);
 
 	void checkAndReleaseOldTouch(SPTouch& t) {
@@ -119,7 +126,6 @@ bool SPLayout::processTouch(SPTouch& t)  {
 			}
 			t.scalePitch_ = t.pitch_;
 			t.vibPitch_ = t.pitch_;
-			lT = t;
 		} else {
 			// continued touch;
 			switch(quantMode_) {
@@ -148,7 +154,6 @@ bool SPLayout::processTouch(SPTouch& t)  {
 					break;
 				}
 			}
-			lT = t;
 		}
 	} else {
 		if(lT.active_) {
@@ -157,7 +162,6 @@ bool SPLayout::processTouch(SPTouch& t)  {
 			} else {
 				t.pitch_ = (t.pitch_ - 0.5f)  * semiMult_ ;
 			}
-			lT=t;
 		} else {
 			return false;
 		}

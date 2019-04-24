@@ -5,6 +5,12 @@
 
 class ZoneLayout_1 : public SPLayout {
 public:
+	ZoneLayout_1() {
+		zoneT_.zone_=0;
+	}
+
+	unsigned signature() override { return calcSignature(1,0);}
+
 	void touch(SPTouch& t) override{
 		t.zone_=0;
 
@@ -29,12 +35,14 @@ public:
 				break;
 			}
 		}
+		SPTouch& lT = lastTouch_[t.tId_];
+		lT=t;
 		output(t);
 	}
 	
 	void output(const SPTouch& t) override {
     	// pitch, y, z, x 
-    	t_ = t;
+    	zoneT_ = t;
 	}
 
 	void render(BelaContext *context) override {
@@ -51,7 +59,7 @@ public:
 			analogWriteOnce(context, n, 7,0.0f);
 		}
 		
-		render(context,t_);
+		render(context,zoneT_);
 	}
 
 	void render(BelaContext *context, const SPTouch& t) {
@@ -85,5 +93,5 @@ public:
 	}
 
 private:
-	SPTouch t_;
+	SPTouch zoneT_;
 };

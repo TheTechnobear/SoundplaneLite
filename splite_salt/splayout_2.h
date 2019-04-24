@@ -11,6 +11,9 @@ public:
 		zoneT_[0].zone_=0;
 		zoneT_[1].zone_=1;
 	}
+
+	unsigned signature() override { return calcSignature(2,0);}
+
 	void touch(SPTouch& t) override{
 	    // t.z_=t.z_;
 	    float startZone=0.0f;
@@ -49,6 +52,8 @@ public:
 				break;
 			}
 		}
+		SPTouch& lT = lastTouch_[t.tId_];
+		lT=t;
 		output(t);				
 	}
 

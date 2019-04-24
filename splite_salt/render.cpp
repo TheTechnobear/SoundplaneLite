@@ -6,20 +6,17 @@
 #include <math.h>
 #include <iostream>
 
-#include <Scope.h>
-Scope scope;
+// #include <Scope.h>
+// Scope scope;
 
 #include "defs.h"
-#include "belaio.h"
 #include "sptouch.h"
 #include "splayout.h"
 
-static BelaIO belaio_;
-
 #include "splayout_1.h"
 #include "splayout_2.h"
-// #include "splayout_4.h"
-// #include "splayout_4xy.h"
+#include "splayout_4.h"
+#include "splayout_4xy.h"
 
 
 AuxiliaryTask gSPLiteProcessTask;
@@ -38,8 +35,8 @@ public:
 		gStartTime = std::chrono::system_clock::now();
 		layouts_.push_back(new ZoneLayout_1());
 		layouts_.push_back(new ZoneLayout_2());
-		// layouts_.push_back(new ZoneLayout_4());
-		// layouts_.push_back(new ZoneLayout_4XY());
+		layouts_.push_back(new ZoneLayout_4());
+		layouts_.push_back(new ZoneLayout_4XY());
 		layouts_[layoutIdx_]->quantMode(quantMode_);
 		layouts_[layoutIdx_]->pitchMode(pitchMode_);
 	}
@@ -71,6 +68,9 @@ public:
 
     void render(BelaContext *context) {
 		layouts_[layoutIdx_]->render(context);
+    }
+    unsigned layoutSignature() {
+    	return layouts_[layoutIdx_]->signature();
     }
 
     void switchLayout(unsigned idx) {
@@ -118,7 +118,7 @@ void process_salt(void*) {
 
 bool setup(BelaContext *context, void *userData)
 {
-	scope.setup(2, context->audioSampleRate);
+	// scope.setup(2, context->audioSampleRate);
 	
 	pinMode(context,0,trigIn1,INPUT);
 	pinMode(context,0,trigIn2,INPUT);
@@ -129,11 +129,6 @@ bool setup(BelaContext *context, void *userData)
 	pinMode(context,0,trigOut2,OUTPUT);
 	pinMode(context,0,trigOut3,OUTPUT);
 	pinMode(context,0,trigOut4,OUTPUT);
-
-
-	// for(unsigned i = 0; i< belaio_.numDigitalOuts(); i++) {
-	//  	pinMode(context, 0, belaio_.digitalOutPin(i), OUTPUT);
-	// }
 
 	gpDevice = new SPLiteDevice();
     gpDevice->addCallback(gCallback);
@@ -171,35 +166,40 @@ void render(BelaContext *context, void *userData)
 
 	if(sw  && !lsw)  { 
 		gCallback->nextLayout(); 
-		led_counter=2000;
+		led_counter=2100;
 		led_mode=1;
 	}
 	
 	if(led_mode==1) {
 		led_counter--;
-		if(led_counter>0) {
-			unsigned layout = (gCallback->layout() + 1) % 16 ;
-			setLed(context, ledOut1, (layout & 8) > 0 ) ;
-			setLed(context, ledOut2, (layout & 4) > 0);
-			setLed(context, ledOut3, (layout & 2) > 0);
-			setLed(context, ledOut4, (layout & 1) > 0);
+		if(led_counter>100 
+			&& led_counter < 2000
+			&& ((led_counter / 500) % 2)
+		) {
+			unsigned layout = (gCallback->layoutSignature());
+			setLed(context, ledOut4, layout & 0x3);
+			layout = layout >> 2;
+			setLed(context, ledOut3, layout & 0x3);
+			layout = layout >> 2;
+			setLed(context, ledOut2, layout & 0x3);
+			layout = layout >> 2;
+			setLed(context, ledOut1, layout & 0x3);
 		} else {
-			led_mode=0;
-			led_counter=0;
 			setLed(context, ledOut1, 0);
 			setLed(context, ledOut2, 0);
 			setLed(context, ledOut3, 0);
 			setLed(context, ledOut4, 0);
+			if(led_counter==0) led_mode=0;
 		}
 	}
 
-	if(tr2  && !ltr2)  { gCallback->nextQuantMode(); }
-
 	if(tr3  && !ltr3)  { gCallback->nextPitchMode(); }
+	if(tr4  && !ltr4)  { gCallback->nextQuantMode(); }
+
 
 	if(led_mode==0) {
-		setLed(context, ledOut2, gCallback->quantMode() %3);
-		setLed(context, ledOut3, gCallback->pitchMode() %3);
+		setLed(context, ledOut3, gCallback->quantMode() %3);
+		setLed(context, ledOut4, gCallback->pitchMode() %3);
 	}
 
 	lsw =  sw;
@@ -219,41 +219,6 @@ void render(BelaContext *context, void *userData)
 	// }
 	
 	gCallback->render(context);
-
-	// for(unsigned int i=0; i< belaio_.numAnalogIn(); i++) {
-	// 	float v = analogRead(context, 0, i);
-	// 	belaio_.analogIn(i,v);
-	// }
-
-
-	// for(unsigned int i = 0; i < belaio_.numDigitalOuts();i++) {
-	// 	unsigned pin= belaio_.digitalOutPin(i);
-	// 	if(pin < context->digitalChannels) { 
-	// 		bool value = belaio_.digitalOut(i);
-	// 		for(unsigned int n = 0; n < context->digitalFrames; n++) {
-	// 			digitalWriteOnce(context, n, pin ,value);	
-	// 		}
-	// 	}
-	// }
-
-	// for(unsigned int i = 0; i < belaio_.numAnalogOut();i++) {
-	// 	float value = belaio_.analogOut(i);
-	// 	for(unsigned int n = 0; n < context->analogFrames; n++) {
-	// 		analogWriteOnce(context, n, i,value );
-	// 	}
-	// }
-
-	// float scopeOut[2];
-	// for(unsigned int channel = 0; channel < context->audioOutChannels; channel++) {
-	// 	float amp = belaio_.audioOut(channel);
-
-	// 	for(unsigned int n = 0; n < context->audioFrames; n++) {
-	// 		float v = audioRead(context, n, channel) * amp;
-	// 		audioWrite(context, n, channel, v);
-	// 		scopeOut[channel]=v;
-	// 	}
-	// }
-	// // scope.log(scopeOut[0],scopeOut[1]);
 }
 
 //=====================================================================================
