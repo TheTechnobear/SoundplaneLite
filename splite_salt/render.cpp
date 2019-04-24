@@ -68,6 +68,11 @@ public:
 
     unsigned layout() { return layoutIdx_;}
 
+
+    void render(BelaContext *context) {
+		layouts_[layoutIdx_]->render(context);
+    }
+
     void switchLayout(unsigned idx) {
     	if(idx< layouts_.size()) layoutIdx_ = idx;
     	// TODO clear values?
@@ -208,40 +213,42 @@ void render(BelaContext *context, void *userData)
 		Bela_scheduleAuxiliaryTask(gSPLiteProcessTask);
 	// }
 	
-	for(unsigned int i=0; i< belaio_.numAnalogIn(); i++) {
-		float v = analogRead(context, 0, i);
-		belaio_.analogIn(i,v);
-	}
+	gCallback->render(context);
+
+	// for(unsigned int i=0; i< belaio_.numAnalogIn(); i++) {
+	// 	float v = analogRead(context, 0, i);
+	// 	belaio_.analogIn(i,v);
+	// }
 
 
-	for(unsigned int i = 0; i < belaio_.numDigitalOuts();i++) {
-		unsigned pin= belaio_.digitalOutPin(i);
-		if(pin < context->digitalChannels) { 
-			bool value = belaio_.digitalOut(i);
-			for(unsigned int n = 0; n < context->digitalFrames; n++) {
-				digitalWriteOnce(context, n, pin ,value);	
-			}
-		}
-	}
+	// for(unsigned int i = 0; i < belaio_.numDigitalOuts();i++) {
+	// 	unsigned pin= belaio_.digitalOutPin(i);
+	// 	if(pin < context->digitalChannels) { 
+	// 		bool value = belaio_.digitalOut(i);
+	// 		for(unsigned int n = 0; n < context->digitalFrames; n++) {
+	// 			digitalWriteOnce(context, n, pin ,value);	
+	// 		}
+	// 	}
+	// }
 
-	for(unsigned int i = 0; i < belaio_.numAnalogOut();i++) {
-		float value = belaio_.analogOut(i);
-		for(unsigned int n = 0; n < context->analogFrames; n++) {
-			analogWriteOnce(context, n, i,value );
-		}
-	}
+	// for(unsigned int i = 0; i < belaio_.numAnalogOut();i++) {
+	// 	float value = belaio_.analogOut(i);
+	// 	for(unsigned int n = 0; n < context->analogFrames; n++) {
+	// 		analogWriteOnce(context, n, i,value );
+	// 	}
+	// }
 
-	float scopeOut[2];
-	for(unsigned int channel = 0; channel < context->audioOutChannels; channel++) {
-		float amp = belaio_.audioOut(channel);
+	// float scopeOut[2];
+	// for(unsigned int channel = 0; channel < context->audioOutChannels; channel++) {
+	// 	float amp = belaio_.audioOut(channel);
 
-		for(unsigned int n = 0; n < context->audioFrames; n++) {
-			float v = audioRead(context, n, channel) * amp;
-			audioWrite(context, n, channel, v);
-			scopeOut[channel]=v;
-		}
-	}
-	// scope.log(scopeOut[0],scopeOut[1]);
+	// 	for(unsigned int n = 0; n < context->audioFrames; n++) {
+	// 		float v = audioRead(context, n, channel) * amp;
+	// 		audioWrite(context, n, channel, v);
+	// 		scopeOut[channel]=v;
+	// 	}
+	// }
+	// // scope.log(scopeOut[0],scopeOut[1]);
 }
 
 //=====================================================================================
