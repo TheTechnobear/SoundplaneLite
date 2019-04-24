@@ -34,7 +34,7 @@ public:
     unsigned pitchMode() { return pitchMode_;}
 
 protected:
-	virtual void processTouch(SPTouch& touch);
+	virtual bool processTouch(SPTouch& touch);
 
 	void checkAndReleaseOldTouch(SPTouch& t) {
 		SPTouch& lT = lastTouch_[t.tId_];
@@ -105,7 +105,7 @@ protected:
 	static constexpr float semiMult_ = (1.0f / (OUT_VOLT_RANGE * 12.0f)); // 1.0 = 10v = 10 octaves 
 };
 
-void SPLayout::processTouch(SPTouch& t)  {
+bool SPLayout::processTouch(SPTouch& t)  {
 	// has to be called after 'zoning'
 
 	SPTouch& lT = lastTouch_[t.tId_];

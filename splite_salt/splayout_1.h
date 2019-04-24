@@ -29,7 +29,7 @@ public:
 				break;
 			}
 		}
-		output(t)
+		output(t);
 	}
 	
 	void output(const SPTouch& t) override {
@@ -37,7 +37,20 @@ public:
     	t_ = t;
 	}
 
-	void render(BelaContext *context) {
+	void render(BelaContext *context) override {
+		//unused
+		for(unsigned int n = 0; n < context->digitalFrames; n++) {
+			digitalWriteOnce(context, n,trigOut2 ,0);	
+			digitalWriteOnce(context, n,trigOut3 ,0);	
+			digitalWriteOnce(context, n,trigOut4 ,0);	
+		}
+		for(unsigned int n = 0; n < context->analogFrames; n++) {
+			analogWriteOnce(context, n, 4,0.0f);
+			analogWriteOnce(context, n, 5,0.0f);
+			analogWriteOnce(context, n, 6,0.0f);
+			analogWriteOnce(context, n, 7,0.0f);
+		}
+		
 		render(context,t_);
 	}
 
@@ -58,14 +71,16 @@ public:
 
 		for(unsigned int n = 0; n < context->analogFrames; n++) {
 			analogWriteOnce(context, n, 0,pitch);
-			analogWriteOnce(context, n, 1,x);
-			analogWriteOnce(context, n, 2,y);
-			analogWriteOnce(context, n, 3,z);
+			analogWriteOnce(context, n, 1,y);
+			analogWriteOnce(context, n, 2,z);
+			analogWriteOnce(context, n, 3,t.x_);
 		}
 
 		for(unsigned int n = 0; n < context->audioFrames; n++) {
-			float v = audioRead(context, n, channel) * amp;
-			audioWrite(context, n, channel, v);
+			float v0 = audioRead(context, n, 0) * amp;
+			audioWrite(context, n, 0, v0);
+			float v1 = audioRead(context, n, 1) * amp;
+			audioWrite(context, n, 1, v1);
 		}
 	}
 

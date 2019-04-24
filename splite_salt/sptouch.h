@@ -49,5 +49,5 @@ struct SPTouch {
 	float scalePitch_;
 	float vibPitch_;
 	unsigned  zone_;
-	float vib_;
+	// float vib_;
 };

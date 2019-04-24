@@ -6,8 +6,8 @@
 #include <math.h>
 #include <iostream>
 
-// #include <Scope.h>
-// Scope scope;
+#include <Scope.h>
+Scope scope;
 
 #include "defs.h"
 #include "belaio.h"
@@ -18,8 +18,8 @@ static BelaIO belaio_;
 
 #include "splayout_1.h"
 #include "splayout_2.h"
-#include "splayout_4.h"
-#include "splayout_4xy.h"
+// #include "splayout_4.h"
+// #include "splayout_4xy.h"
 
 
 AuxiliaryTask gSPLiteProcessTask;
@@ -38,8 +38,8 @@ public:
 		gStartTime = std::chrono::system_clock::now();
 		layouts_.push_back(new ZoneLayout_1());
 		layouts_.push_back(new ZoneLayout_2());
-		layouts_.push_back(new ZoneLayout_4());
-		layouts_.push_back(new ZoneLayout_4XY());
+		// layouts_.push_back(new ZoneLayout_4());
+		// layouts_.push_back(new ZoneLayout_4XY());
 		layouts_[layoutIdx_]->quantMode(quantMode_);
 		layouts_[layoutIdx_]->pitchMode(pitchMode_);
 	}
@@ -118,17 +118,22 @@ void process_salt(void*) {
 
 bool setup(BelaContext *context, void *userData)
 {
-	// scope.setup(2, context->audioSampleRate);
+	scope.setup(2, context->audioSampleRate);
 	
 	pinMode(context,0,trigIn1,INPUT);
 	pinMode(context,0,trigIn2,INPUT);
 	pinMode(context,0,trigIn3,INPUT);
 	pinMode(context,0,trigIn4,INPUT);
 
+	pinMode(context,0,trigOut1,OUTPUT);
+	pinMode(context,0,trigOut2,OUTPUT);
+	pinMode(context,0,trigOut3,OUTPUT);
+	pinMode(context,0,trigOut4,OUTPUT);
 
-	for(unsigned i = 0; i< belaio_.numDigitalOuts(); i++) {
-	 	pinMode(context, 0, belaio_.digitalOutPin(i), OUTPUT);
-	}
+
+	// for(unsigned i = 0; i< belaio_.numDigitalOuts(); i++) {
+	//  	pinMode(context, 0, belaio_.digitalOutPin(i), OUTPUT);
+	// }
 
 	gpDevice = new SPLiteDevice();
     gpDevice->addCallback(gCallback);
