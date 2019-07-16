@@ -37,6 +37,7 @@ public:
     void setCarriers(const Carriers &carriers) override;
     void enableCarriers(unsigned long mask) override;
 
+    void processThread();
 private:
     /**
      * A RAII helper for libusb device handles. It closes the device handle on
@@ -223,11 +224,11 @@ private:
      *
      * May spuriously wait for a shorter than the specified time.
      */
-    bool processThreadWait(int ms) const;
+    bool processThreadWait(int ms) ;
     /**
      * Returns false if the process thread should quit.
      */
-    bool processThreadOpenDevice(LibusbClaimedDevice &outDevice) const;
+    bool processThreadOpenDevice(LibusbClaimedDevice &outDevice) ;
     /**
      * Sets mFirmwareVersion and mSerialNumber as a side effect, but only
      * if the whole operation succeeds.
@@ -272,7 +273,6 @@ private:
      * Returns true if a control request was sent.
      */
     bool processThreadHandleRequests(libusb_device_handle *device);
-    void processThread();
 
     /**
      * mState is set only by the processThread. Because the processThread never
@@ -297,12 +297,17 @@ private:
      */
     std::atomic<std::array<unsigned char, 64>> mSerialNumber;
 
+#ifdef __COBALT__
+    pthread_mutex_t mMutex;
+    pthread_cond_t mCondition;
+
+#else 
     mutable std::mutex mMutex;  // Used with mCondition
     /**
      * Used to wake up the process thread when it's waiting for a device
      */
     mutable std::condition_variable mCondition;
-
+#endif
     /**
      * Written on object initialization and then never modified. Can be read
      * from any thread.

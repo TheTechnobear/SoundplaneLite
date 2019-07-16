@@ -96,12 +96,20 @@ LibusbSoundplaneDriver::LibusbSoundplaneDriver(SoundplaneDriverListener &listene
     if (libusb_init(&mLibusbContext) < 0) {
         throw std::runtime_error("LibusbSoundplaneDriver::Failed to initialize libusb");
     }
+#ifdef __COBALT__
+    pthread_mutex_init(&mMutex,0);
+    pthread_cond_init(&mCondition,0);
+#endif
 }
 
 LibusbSoundplaneDriver::~LibusbSoundplaneDriver() {
     // This causes getDeviceState to return kDeviceIsTerminating
     mQuitting.store(true, std::memory_order_release);
+#ifdef __COBALT__
+    pthread_cond_broadcast(&mCondition);
+#else
     mCondition.notify_one();
+#endif
     mProcessThread.join();
 
     delete mEnableCarriersRequest.load(std::memory_order_acquire);
@@ -110,10 +118,22 @@ LibusbSoundplaneDriver::~LibusbSoundplaneDriver() {
     libusb_exit(mLibusbContext);
 }
 
+void* sppt(void* a) {
+	LibusbSoundplaneDriver *pThis=static_cast<LibusbSoundplaneDriver*>(a);
+	pThis->processThread();
+}
 
 void LibusbSoundplaneDriver::start() {
     // create device grab thread
+#if __COBALT__
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_t ph = mProcessThread.native_handle();
+    pthread_create(&ph, &attr, sppt, this);
+    pthread_attr_destroy(&attr);
+#else
     mProcessThread = std::thread(&LibusbSoundplaneDriver::processThread, this);
+#endif
     SetPriorityRealtimeAudio(mProcessThread.native_handle());
 
 }
@@ -196,13 +216,29 @@ libusb_error LibusbSoundplaneDriver::processThreadSendControl(
     return result;
 }
 
-bool LibusbSoundplaneDriver::processThreadWait(int ms) const {
+bool LibusbSoundplaneDriver::processThreadWait(int ms) {
+#ifdef __COBALT__
+    pthread_mutex_lock(&mMutex);
+    unsigned long long t = ms * 1000;
+    struct timespec ts = { t/1000000ULL, 1000ULL*(t%1000000ULL) };
+
+    clock_gettime(CLOCK_REALTIME, &ts);
+
+    t += (ts.tv_nsec/1000ULL);
+    ts.tv_nsec = 0;
+    ts.tv_sec += t/1000000ULL;
+    ts.tv_nsec += 1000ULL*(t%1000000ULL);
+
+    pthread_cond_timedwait(&mCondition,&mMutex,&ts);
+    pthread_mutex_unlock(&mMutex);
+#else
     std::unique_lock<std::mutex> lock(mMutex);
     mCondition.wait_for(lock, std::chrono::milliseconds(ms));
+#endif
     return !mQuitting.load(std::memory_order_acquire);
 }
 
-bool LibusbSoundplaneDriver::processThreadOpenDevice(LibusbClaimedDevice &outDevice) const {
+bool LibusbSoundplaneDriver::processThreadOpenDevice(LibusbClaimedDevice &outDevice) {
     for (;;) {
         libusb_device_handle *handle = libusb_open_device_with_vid_pid(
             mLibusbContext, kSoundplaneUSBVendor, kSoundplaneUSBProduct);
@@ -462,6 +498,7 @@ void LibusbSoundplaneDriver::processThread() {
 
         if (!success) continue;
 
+        mListener.onStartup();
         // FIXME: Handle debugger interruptions
 
         /// Run the main event loop
@@ -477,6 +514,7 @@ void LibusbSoundplaneDriver::processThread() {
             }
         }
 
+        mListener.onClose();
         if (!processThreadSetDeviceState(kNoDevice)) continue;
     }
 
