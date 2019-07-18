@@ -6,7 +6,7 @@ profile
 build
 splite-bela/splite_bela
 splite-salt/splite_salt
-splite-salt/loop_sp
+splite-salt/loop-sp
 
 **/*.sublime-workspace
 cmake-build*/
