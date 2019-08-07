@@ -4,8 +4,8 @@
 profile
 **/build/*
 build
-splite-bela/splite_bela
-splite-salt/splite_salt
+splite-bela/splite-bela
+splite-salt/splite-salt
 splite-salt/loop_1-sp
 
 **/*.sublime-workspace
