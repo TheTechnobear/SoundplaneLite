@@ -76,7 +76,7 @@ public:
     void switchLayout(unsigned idx) {
     	if(idx< layouts_.size()) layoutIdx_ = idx;
     }
-    
+
     void nextLayout() {
     	layoutIdx_ = ++layoutIdx_ % layouts_.size();
 		layouts_[layoutIdx_]->quantMode(quantMode_);

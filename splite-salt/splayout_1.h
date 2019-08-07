@@ -68,9 +68,9 @@ public:
 		if(pitchMode()!=PitchMode::NONE) {
 			pitch = transpose(t.pitch_, int((analogRead(context, 0, 0) - 0.5) * 6) ,-3);
 		}
-		
-		float y = scaleY(t.y_,analogRead(context, 0, 0) * 2);
-		float z = pressure(t.z_,analogRead(context, 0, 1) * 2);
+
+		float y = scaleY(t.y_,analogRead(context, 0, 1) * 2);
+		float z = pressure(t.z_,analogRead(context, 0, 2) * 2);
 		float amp = audioAmp(t.z_,analogRead(context, 0, 2) * 2);
 
 		for(unsigned int n = 0; n < context->digitalFrames; n++) {
