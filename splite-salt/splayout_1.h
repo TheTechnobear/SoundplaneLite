@@ -13,6 +13,9 @@ public:
 
 	void touch(SPTouch& t) override{
 		t.zone_=0;
+		t.row_ = int(t.y_);
+
+		checkAndReleaseOldTouch(t);
 
 		switch(pitchMode()) {
 			case PitchMode::NONE : {
@@ -21,20 +24,20 @@ public:
 			}
 			case PitchMode::SINGLE : {
 				t.pitch_= t.x_ ;
-			    t.y_=(t.y_ - 2.5f) / 2.5f; // -1...1
+				t.y_=(t.y_ - 2.5f) / 2.5f; // -1...1
 				t.x_ = t.x_ / 30.0f;
 				if(!processTouch(t)) return;
 				break;
 			}
 			case PitchMode::FOURTHS : {
-				int row = t.y_;
-				t.y_= ((t.y_ - row) * 2.0f) - 1.0f;
-				t.pitch_= t.x_ + ((row - 2) * 5.0f) ;
+				t.y_= ((t.y_ - t.row_) * 2.0f) - 1.0f;
+				t.pitch_= t.x_ + ((t.row_ - 2) * 5.0f) ;
 				t.x_ = t.x_ / 30.0f;
 				if(!processTouch(t)) return;
 				break;
 			}
 		}
+
 		SPTouch& lT = lastTouch_[t.tId_];
 		lT=t;
 		output(t);

@@ -4,13 +4,14 @@
 struct SPTouch {
 	SPTouch() : 
 		SPTouch(0,false,
-				0.0f,0.0f,0.0f) {
+				0.0f,0.0f,0.0f,
+				0) {
 		;
 	}
 	
-	SPTouch(unsigned  tId, bool active,float x, float y, float z) 
+	SPTouch(unsigned  tId, bool active,float x, float y, float z, int r) 
 	: 	tId_(tId), active_(active),
-		x_(x), y_(y), z_(z) , 
+		x_(x), y_(y), z_(z) , row_(r),
 		pitch_(0.0f), 
 		scalePitch_(0.0f), vibPitch_(0.0f), 
 		zone_(0) {
@@ -19,7 +20,7 @@ struct SPTouch {
 	
 	SPTouch(const SPTouch& t) 
 	: 	tId_(t.tId_), active_(t.active_),
-		x_(t.x_), y_(t.y_), z_(t.z_) , 
+		x_(t.x_), y_(t.y_), z_(t.z_) , row_(t.row_), 
 		pitch_(t.pitch_),  
 		scalePitch_(t.scalePitch_), vibPitch_(t.vibPitch_),
 		zone_(t.zone_) {
@@ -32,6 +33,7 @@ struct SPTouch {
 		x_=t.x_;
 		y_=t.y_;
 		z_=t.z_;
+		row_=t.row_;
 		pitch_=t.pitch_;
 		scalePitch_=t.scalePitch_;
 		vibPitch_=t.vibPitch_;
@@ -44,6 +46,7 @@ struct SPTouch {
 	float x_;
 	float y_;
 	float z_;
+	int row_;
 	
 	float pitch_;
 	float scalePitch_;

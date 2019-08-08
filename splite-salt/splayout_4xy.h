@@ -36,6 +36,7 @@ public:
 		    startZone=zone3_;
 		    endZone=30.0f;
         }
+		t.row_ = int(t.y_);
         
 		checkAndReleaseOldTouch(t);
 
@@ -58,9 +59,8 @@ public:
 					break;
 				}
 				case PitchMode::FOURTHS : {
-					int row = t.y_;
-					t.y_ = ((t.y_ - row) * 2.0f) - 1.0f;
-					t.pitch_= (t.x_ - startZone) + ((row - 2)* 5.0f) ;
+					t.y_ = ((t.y_ - t.row_) * 2.0f) - 1.0f;
+					t.pitch_= (t.x_ - startZone) + ((t.row_ - 2)* 5.0f) ;
 					t.x_ = gridX(t.x_, startZone, endZone);
 					if(!processTouch(t)) return;
 					break;

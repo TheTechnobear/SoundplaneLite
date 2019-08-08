@@ -108,7 +108,7 @@ public:
 
 private:
 	void updateOutput(unsigned  tId, bool active,float x, float y, float z) {
-		SPTouch touch(tId,active,x,y,z * 0.6f);
+		SPTouch touch(tId,active,x,y,z * 0.6f, int(y));
 		layouts_[layoutIdx_]->touch(touch);
 	}
 	unsigned  layoutIdx_;

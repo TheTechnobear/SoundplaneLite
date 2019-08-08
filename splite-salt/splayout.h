@@ -51,11 +51,17 @@ protected:
 
 	void checkAndReleaseOldTouch(SPTouch& t) {
 		SPTouch& lT = lastTouch_[t.tId_];
-		if(lT.active_ && lT.zone_!=t.zone_) {
+		if(	lT.active_ && t.active_&& 
+		    (  lT.zone_!=t.zone_
+			    || (pitchMode_==PitchMode::FOURTHS && lT.row_!=t.row_)
+			)
+			) {
 			SPTouch rT = lT;
 			rT.active_=false;
 			rT.z_=0;
-			output(rT); 
+			output(rT);
+			lT.active_=false;
+			return;
 		}
 	}
 
