@@ -56,10 +56,6 @@ the bela web ui does not support a subdirectories, so the way install is
     mkdir build
     cd build
     cmake -DCMAKE_BUILD_TYPE=Release -DBELA=on ..
-    cd ~/Bela/projects
-    ln ~/projects/SoundplaneLite
-
-this means we now have the SoundplaneLite project in the 'normal' bela projects directory, but it refers to ~/projects/SoundplaneLite, so you should push from ~/Projects/SoundplaneLite
 
 
 # Building on Windows
