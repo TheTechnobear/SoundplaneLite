@@ -121,6 +121,7 @@ LibusbSoundplaneDriver::~LibusbSoundplaneDriver() {
 void* sppt(void* a) {
 	LibusbSoundplaneDriver *pThis=static_cast<LibusbSoundplaneDriver*>(a);
 	pThis->processThread();
+	return nullptr;
 }
 
 void LibusbSoundplaneDriver::start() {

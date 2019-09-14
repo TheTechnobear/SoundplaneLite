@@ -89,7 +89,7 @@ static void makeStandardCarrierSet(SoundplaneDriver::Carriers &carriers, int set
     int gapSize = 4;
     int gapStart = set*skipSize + startOffset;
     carriers[0] = carriers[1] = 0;
-    for(int i=startOffset; i<gapStart; ++i)
+    for(int i=startOffset; i<gapStart && i<kSoundplaneNumCarriers; ++i)
     {
         carriers[i] = kModelDefaultCarriers[i];
     }
