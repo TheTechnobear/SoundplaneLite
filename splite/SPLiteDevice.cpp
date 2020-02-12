@@ -205,9 +205,9 @@ unsigned SPLiteImpl_::process(void) {
                 calibrateMeanInv_ = divide(fill(1.f), mean);
                 //std::cerr << "calibration complete" << std::endl;
                 isCal_ = true;
-            }
-            for (auto cb : callbacks_) {
-                cb->onInit();
+                for (auto cb : callbacks_) {
+                    cb->onInit();
+                }
             }
         } else {
             for (auto cb : callbacks_) {
