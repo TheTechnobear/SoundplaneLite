@@ -63,6 +63,7 @@ public:
 
     void addCallback(std::shared_ptr<SPLiteCallback> cb) {     callbacks_.push_back(cb);}
     void maxTouches(unsigned t) { maxTouches_ = t;  }
+    void overrideCarrierSet(int c);
 
     void onStartup(void);
     void onFrame(const SensorFrame &frame);
@@ -93,6 +94,7 @@ private:
 
     bool isCal_ = false;
     bool isCarrierSet_ = false;
+    int  overrideCarrier_ = -1;
     SoundplaneDriver::Carriers carriers_;
     SensorFrameStats stats_;
     SensorFrame calibrateMeanInv_{};
@@ -111,6 +113,10 @@ SPLiteImpl_::SPLiteImpl_() :
     driver_(nullptr),
     messageQueue_(100) {
     driver_ = SoundplaneDriver::create(listener_);
+}
+
+void SPLiteImpl_::overrideCarrierSet(int c) {
+    overrideCarrier_=c;
 }
 
 void SPLiteImpl_::start() {
@@ -176,7 +182,11 @@ unsigned SPLiteImpl_::process(void) {
     while (messageQueue_.try_dequeue(frame)) {
         count++;
         if (!isCarrierSet_) {
-            makeStandardCarrierSet(carriers_, kDefaultCarrierSet);
+            if(overrideCarrier_>0 && overrideCarrier_<=kStandardCarrierSets) {
+                makeStandardCarrierSet(carriers_, overrideCarrier_);
+            } else {
+                makeStandardCarrierSet(carriers_, kDefaultCarrierSet);
+            }
             driver_->setCarriers(carriers_);
             unsigned long carrierMask = 0xFFFFFFFF;
             driver_->enableCarriers(~carrierMask);
@@ -288,6 +298,10 @@ void SPLiteDevice::start() {
 
 void SPLiteDevice::stop() {
     impl_->stop();
+}
+
+void SPLiteDevice::overrideCarrierSet(int c) {
+    impl_->overrideCarrierSet(c);
 }
 
 void SPLiteDevice::addCallback(std::shared_ptr<SPLiteCallback> cb) {

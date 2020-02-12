@@ -27,6 +27,7 @@ public:
     unsigned process(); // call periodically
     void addCallback(std::shared_ptr<SPLiteCallback>);
     void maxTouches(unsigned);
+    void overrideCarrierSet(int carrier);
 private:
     SPLiteImpl_* impl_;
 };
