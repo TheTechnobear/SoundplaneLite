@@ -221,7 +221,7 @@ bool LibusbSoundplaneDriver::processThreadWait(int ms) {
 #ifdef __COBALT__
     pthread_mutex_lock(&mMutex);
     unsigned long long t = ms * 1000;
-    struct timespec ts = { t/1000000ULL, 1000ULL*(t%1000000ULL) };
+    struct timespec ts = { static_cast<time_t>(t/1000000ULL), static_cast<long>(1000ULL*(t%1000000ULL)) };
 
     clock_gettime(CLOCK_REALTIME, &ts);
 
