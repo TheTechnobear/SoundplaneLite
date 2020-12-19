@@ -1,6 +1,13 @@
-cmake_minimum_required(VERSION 2.8.11)
+cmake_minimum_required(VERSION 2.8.12)
 
 project(soundplanelite)
+
+if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
+  if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
+  endif()
+endif()
+
 
 set(PROJECT_NAME soundplanelite)
 set(SPL_VERSION_MAJOR 0)
@@ -80,12 +87,13 @@ endif ()
 if (NOT DISABLE_RPATH_OVERRIDE)
   ## setup rpath for linux and macos
   set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
-  if (NOT APPLE)
-    set(CMAKE_INSTALL_RPATH "$ORIGIN/:$ORIGIN/../lib")
-  else()
+
+  if(CMAKE_SYSTEM_NAME STREQUAL "Darwin") 
     set(CMAKE_INSTALL_NAME_DIR "@rpath")
     set(CMAKE_INSTALL_RPATH "@executable_path/../lib;@loader_path")
     set(CMAKE_BUILD_WITH_INSTALL_NAME_DIR TRUE)
+  else()
+    set(CMAKE_INSTALL_RPATH "$ORIGIN/:$ORIGIN/../lib")
   endif()
 endif()
 
