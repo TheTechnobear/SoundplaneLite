@@ -8,11 +8,12 @@ target_link_libraries (soundplanetest splite)
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
   target_link_libraries(soundplanetest atomic)
 endif()
-if(APPLE)
-target_link_libraries(soundplanetest  "-framework CoreServices -framework CoreFoundation -framework IOKit -framework CoreAudio")
-elseif(UNIX) 
-target_link_libraries(soundplanetest pthread libusb)
-endif(APPLE)
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin") 
+	target_link_libraries(soundplanetest  "-framework CoreServices -framework CoreFoundation -framework IOKit -framework CoreAudio")
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+	target_link_libraries(soundplanetest pthread libusb)
+endif()
 
 
 # test touchtracker app
@@ -25,11 +26,12 @@ target_link_libraries (touchtrackertest splite)
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
   target_link_libraries(touchtrackertest atomic)
 endif()
-if(APPLE)
-target_link_libraries(touchtrackertest  "-framework CoreServices -framework CoreFoundation -framework IOKit -framework CoreAudio")
-elseif(UNIX) 
-target_link_libraries(touchtrackertest pthread libusb)
-endif(APPLE)
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin") 
+	target_link_libraries(touchtrackertest  "-framework CoreServices -framework CoreFoundation -framework IOKit -framework CoreAudio")
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+	target_link_libraries(touchtrackertest pthread libusb)
+endif()
 
 
 # splitedev test app
@@ -42,8 +44,9 @@ target_link_libraries (splitedevtest splite )
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
   target_link_libraries(splitedevtest atomic)
 endif()
-if(APPLE)
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin") 
   target_link_libraries(splitedevtest  "-framework CoreServices -framework CoreFoundation -framework IOKit -framework CoreAudio")
-elseif(UNIX)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   target_link_libraries(splitedevtest pthread libusb)
-endif(APPLE)
+endif()

@@ -33,20 +33,19 @@ set(SPL_SRC
 
 find_library(LIBUSB_LIB NAME libusb)
 
-if (APPLE AND NOT SPLITE_FORCE_LIBUSB)
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     message("-- using macOS USB")
     list(APPEND SPL_SRC
             splib/MacSoundplaneDriver.cpp
             splib/MacSoundplaneDriver.h
             )
-else ()
-#elseif (UNIX)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     message("-- using LIBUSB")
     list(APPEND SPL_SRC
             splib/LibusbSoundplaneDriver.cpp
             splib/LibusbSoundplaneDriver.h
             )
-endif (APPLE AND NOT SPLITE_FORCE_LIBUSB)
+endif ()
 
 
 
@@ -58,12 +57,11 @@ if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
     target_link_libraries(splite atomic)
 endif ()
 
-if (APPLE AND NOT SPLITE_FORCE_LIBUSB)
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     target_link_libraries(splite "-framework Cocoa -framework IOKit")
-else ()
-#elseif (UNIX)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     target_link_libraries(splite "libusb" "dl" "pthread")
-endif (APPLE AND NOT SPLITE_FORCE_LIBUSB)
+endif ()
 
 target_include_directories(splite PUBLIC
         .
