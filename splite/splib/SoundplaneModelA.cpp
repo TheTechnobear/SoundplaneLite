@@ -5,6 +5,7 @@
 #include "SoundplaneModelA.h"
 
 #include <math.h>
+#include <stdio.h>
 
 const char* kSoundplaneAName = ("Soundplane Model A");
 

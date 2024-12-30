@@ -5,6 +5,7 @@
 #pragma once
 
 #include <array>
+#include <iostream>
 
 namespace SensorGeometry
 {

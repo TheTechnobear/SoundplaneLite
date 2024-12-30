@@ -6,6 +6,7 @@
 #define __SOUNDPLANE_MODEL_A__
 
 #include <array>
+#include <cstdint>
 #include "SensorFrame.h"
 
 // Soundplane data format:
